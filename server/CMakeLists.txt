@@ -16,4 +16,4 @@ else ()
 endif ()
 
 target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/domain
-        ${CMAKE_CURRENT_SOURCE_DIR}/interfaces)
+        ${CMAKE_CURRENT_SOURCE_DIR}/events ${CMAKE_CURRENT_SOURCE_DIR}/interfaces)

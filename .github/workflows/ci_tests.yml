@@ -45,16 +45,16 @@ jobs:
       - name: Build main target
         shell: bash
         run: |
-          cmake --build cmake-build-release --target QtBoostCMake
+          cmake --build cmake-build-release --target Client
 
       - name: Run program
         shell: bash
         working-directory: ./cmake-build-release/bin
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-              ./QtBoostCMake.exe --help
-          else 
-              ./QtBoostCMake --help
+              ./Client.exe --help
+          else
+              ./Client --help
           fi
       - name: Build tests
         shell: bash

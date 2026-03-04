@@ -49,7 +49,7 @@ jobs:
 
       - name: Run program
         shell: bash
-        working-directory: ./cmake-build-release/bin
+        working-directory: ./cmake-build-release/client
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
               ./Client.exe --help

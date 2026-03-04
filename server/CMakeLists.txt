@@ -1,6 +1,8 @@
 set(SERVER_DOMAIN_SOURCES
     domain/quiz.cpp
     domain/session.cpp
+    services/in_memory_quiz_storage.cpp
+    services/quiz_registry.cpp
 )
 
 if (WIN32)
@@ -16,4 +18,5 @@ else ()
 endif ()
 
 target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/domain
-        ${CMAKE_CURRENT_SOURCE_DIR}/events ${CMAKE_CURRENT_SOURCE_DIR}/interfaces)
+        ${CMAKE_CURRENT_SOURCE_DIR}/events ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
+        ${CMAKE_CURRENT_SOURCE_DIR}/services)

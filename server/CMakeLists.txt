@@ -1,14 +1,17 @@
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-find_package(Boost REQUIRED)
+set(SERVER_DOMAIN_SOURCES
+    domain/quiz.cpp
+)
 
 if (WIN32)
     add_executable(Server WIN32
             main.cpp
+            ${SERVER_DOMAIN_SOURCES}
     )
 else ()
     add_executable(Server
             main.cpp
+            ${SERVER_DOMAIN_SOURCES}
     )
 endif ()
 
-target_link_libraries(Server PRIVATE qt boost)
+target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/domain)

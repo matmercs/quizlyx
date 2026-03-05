@@ -1,4 +1,5 @@
 set(SERVER_DOMAIN_SOURCES
+    app/command_handler.cpp
     domain/quiz.cpp
     domain/session.cpp
     services/in_memory_quiz_storage.cpp
@@ -20,6 +21,7 @@ else ()
     )
 endif ()
 
-target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/domain
+target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/app ${CMAKE_CURRENT_SOURCE_DIR}/domain
         ${CMAKE_CURRENT_SOURCE_DIR}/events ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
         ${CMAKE_CURRENT_SOURCE_DIR}/services)

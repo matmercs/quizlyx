@@ -4,6 +4,8 @@ set(SERVER_DOMAIN_SOURCES
     services/in_memory_quiz_storage.cpp
     services/quiz_registry.cpp
     services/scoring.cpp
+    services/session_manager.cpp
+    services/session_timer_service.cpp
 )
 
 if (WIN32)

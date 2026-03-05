@@ -3,6 +3,7 @@ set(SERVER_DOMAIN_SOURCES
     domain/session.cpp
     services/in_memory_quiz_storage.cpp
     services/quiz_registry.cpp
+    services/scoring.cpp
 )
 
 if (WIN32)

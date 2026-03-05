@@ -12,6 +12,7 @@ namespace quizlyx::server::events {
 
 struct QuestionStarted {
   size_t question_index;
+  std::chrono::steady_clock::time_point started_at;
   std::chrono::milliseconds duration_ms;
 };
 

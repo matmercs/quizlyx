@@ -1,6 +1,7 @@
 #ifndef QUIZLYX_SERVER_DOMAIN_SESSION_HPP
 #define QUIZLYX_SERVER_DOMAIN_SESSION_HPP
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,8 @@ struct Session {
   SessionState state;
   std::vector<Player> players;
   size_t current_question_index;
+  std::chrono::steady_clock::time_point question_deadline;
+  bool has_question_deadline = false;
 };
 
 bool CanJoin(const Session& s);

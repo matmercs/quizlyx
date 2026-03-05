@@ -15,12 +15,14 @@ enable_testing()
 add_executable(
         ${PROJECT_NAME}_tests
         test_suites/ProjectIntegrationTestSuite.cpp
+        server_business_logic_demo_test.cpp
         main_tests.cpp
 )
 
 target_link_libraries(
         ${PROJECT_NAME}_tests
         GTest::gtest_main
+        quizlyx_server_lib
 )
 
 target_include_directories(${PROJECT_NAME}_tests PUBLIC ${PROJECT_SOURCE_DIR})

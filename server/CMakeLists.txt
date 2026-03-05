@@ -9,19 +9,15 @@ set(SERVER_DOMAIN_SOURCES
     services/session_timer_service.cpp
 )
 
-if (WIN32)
-    add_executable(Server WIN32
-            main.cpp
-            ${SERVER_DOMAIN_SOURCES}
-    )
-else ()
-    add_executable(Server
-            main.cpp
-            ${SERVER_DOMAIN_SOURCES}
-    )
-endif ()
-
-target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+add_library(quizlyx_server_lib STATIC ${SERVER_DOMAIN_SOURCES})
+target_include_directories(quizlyx_server_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/app ${CMAKE_CURRENT_SOURCE_DIR}/domain
         ${CMAKE_CURRENT_SOURCE_DIR}/events ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
         ${CMAKE_CURRENT_SOURCE_DIR}/services)
+
+if (WIN32)
+    add_executable(Server WIN32 main.cpp)
+else ()
+    add_executable(Server main.cpp)
+endif ()
+target_link_libraries(Server PRIVATE quizlyx_server_lib)

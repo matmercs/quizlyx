@@ -16,7 +16,7 @@ std::optional<interfaces::SessionCreated> ServerCommandHandler::CreateSession(co
   auto info = session_manager_.CreateSession(quiz_code, host_id);
   if (!info)
     return std::nullopt;
-  return interfaces::SessionCreated{info->session_id, info->pin};
+  return interfaces::SessionCreated{.session_id = info->session_id, .pin = info->pin};
 }
 
 bool ServerCommandHandler::StartGame(const std::string& session_id) {

@@ -1,6 +1,7 @@
 #include "session_manager.hpp"
 
 #include <algorithm>
+#include <format>
 #include <random>
 
 namespace quizlyx::server::services {
@@ -11,17 +12,16 @@ namespace {
   ::quizlyx::server::events::Leaderboard leaderboard;
   leaderboard.entries.reserve(session.players.size());
   for (const auto& player : session.players) {
-    leaderboard.entries.push_back(events::LeaderboardEntry{player.id, player.score});
+    leaderboard.entries.push_back(events::LeaderboardEntry{.player_id = player.id, .score = player.score});
   }
 
-  std::sort(leaderboard.entries.begin(),
-            leaderboard.entries.end(),
-            [](const ::quizlyx::server::events::LeaderboardEntry& lhs,
-               const ::quizlyx::server::events::LeaderboardEntry& rhs) {
-              if (lhs.score != rhs.score)
-                return lhs.score > rhs.score;
-              return lhs.player_id < rhs.player_id;
-            });
+  std::ranges::sort(leaderboard.entries,
+                    [](const ::quizlyx::server::events::LeaderboardEntry& lhs,
+                       const ::quizlyx::server::events::LeaderboardEntry& rhs) {
+                      if (lhs.score != rhs.score)
+                        return lhs.score > rhs.score;
+                      return lhs.player_id < rhs.player_id;
+                    });
 
   return leaderboard;
 }
@@ -55,14 +55,15 @@ std::optional<SessionManager::SessionInfo> SessionManager::CreateSession(const s
     session.current_question_index = 0;
     session.has_question_deadline = false;
 
-    domain::Player host{host_id, domain::Role::Host, 0, false};
+    domain::Player host{
+        .id = host_id, .role = domain::Role::Host, .score = 0, .answered_current_question = false};
     session.players.push_back(std::move(host));
 
     sessions_by_id_.emplace(session.id, session);
     session_id_by_pin_.emplace(session.pin, session.id);
   }
 
-  ::quizlyx::server::events::PlayerJoined joined_event{host_id, domain::Role::Host};
+  ::quizlyx::server::events::PlayerJoined joined_event{.player_id = host_id, .role = domain::Role::Host};
   broadcast_sink_.Broadcast(info.session_id, joined_event);
 
   return info;
@@ -89,7 +90,7 @@ std::optional<domain::Session> SessionManager::GetSessionByPin(const std::string
 
 bool SessionManager::JoinAsPlayer(const std::string& pin, const std::string& player_id) {
   std::string session_id;
-  ::quizlyx::server::events::PlayerJoined joined_event{player_id, domain::Role::Player};
+  ::quizlyx::server::events::PlayerJoined joined_event{.player_id = player_id, .role = domain::Role::Player};
 
   {
     std::lock_guard lock(mutex_);
@@ -105,7 +106,8 @@ bool SessionManager::JoinAsPlayer(const std::string& pin, const std::string& pla
     if (!domain::CanJoin(session))
       return false;
 
-    domain::Player player{player_id, domain::Role::Player, 0, false};
+    domain::Player player{
+        .id = player_id, .role = domain::Role::Player, .score = 0, .answered_current_question = false};
     if (!domain::AddPlayer(session, player))
       return false;
 
@@ -117,7 +119,7 @@ bool SessionManager::JoinAsPlayer(const std::string& pin, const std::string& pla
 }
 
 bool SessionManager::Leave(const std::string& session_id, const std::string& player_id) {
-  std::string id = session_id;
+  const std::string& id = session_id;
   ::quizlyx::server::events::PlayerLeft left_event{player_id};
 
   {
@@ -135,7 +137,7 @@ bool SessionManager::Leave(const std::string& session_id, const std::string& pla
 }
 
 bool SessionManager::StartGame(const std::string& session_id) {
-  std::string id = session_id;
+  const std::string& id = session_id;
   std::optional<::quizlyx::server::events::GameEvent> event;
 
   {
@@ -174,7 +176,7 @@ bool SessionManager::StartGame(const std::string& session_id) {
 }
 
 bool SessionManager::NextQuestion(const std::string& session_id) {
-  std::string id = session_id;
+  const std::string& id = session_id;
   std::optional<::quizlyx::server::events::GameEvent> event;
 
   {
@@ -221,7 +223,7 @@ bool SessionManager::NextQuestion(const std::string& session_id) {
 bool SessionManager::SubmitAnswer(const std::string& session_id,
                                   const std::string& player_id,
                                   const domain::PlayerAnswer& answer) {
-  std::string id = session_id;
+  const std::string& id = session_id;
   std::optional<::quizlyx::server::events::GameEvent> event;
 
   {
@@ -247,9 +249,7 @@ bool SessionManager::SubmitAnswer(const std::string& session_id,
     if (!domain::RecordAnswer(session, player_id))
       return false;
 
-    auto player_it = std::find_if(session.players.begin(),
-                                  session.players.end(),
-                                  [&player_id](const domain::Player& p) { return p.id == player_id; });
+    auto player_it = std::ranges::find_if(session.players, [&player_id](const domain::Player& p) { return p.id == player_id; });
     if (player_it == session.players.end())
       return false;
 
@@ -273,10 +273,7 @@ std::string SessionManager::GeneratePin() const {
   static thread_local std::mt19937 rng{std::random_device{}()};
   std::uniform_int_distribution<int> dist(0, 999999);
   const int value = dist(rng);
-
-  char buf[7];
-  std::snprintf(buf, sizeof(buf), "%06d", value);
-  return std::string(buf);
+  return std::format("{:06d}", value);
 }
 
 } // namespace quizlyx::server::services

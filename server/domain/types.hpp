@@ -9,6 +9,6 @@ enum class Role { Host, Player };
 
 enum class AnswerType { SingleChoice, MultipleChoice };
 
-}  // namespace quizlyx::server::domain
+} // namespace quizlyx::server::domain
 
-#endif  // QUIZLYX_SERVER_DOMAIN_TYPES_HPP
+#endif // QUIZLYX_SERVER_DOMAIN_TYPES_HPP

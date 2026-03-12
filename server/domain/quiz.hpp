@@ -26,6 +26,6 @@ struct Quiz {
 bool Validate(const Question& q);
 bool Validate(const Quiz& quiz);
 
-}  // namespace quizlyx::server::domain
+} // namespace quizlyx::server::domain
 
-#endif  // QUIZLYX_SERVER_DOMAIN_QUIZ_HPP
+#endif // QUIZLYX_SERVER_DOMAIN_QUIZ_HPP

@@ -8,12 +8,12 @@
 namespace quizlyx::server::interfaces {
 
 class IBroadcastSink {
- public:
+public:
   virtual ~IBroadcastSink() = default;
 
   virtual void Broadcast(const std::string& session_id, const events::GameEvent& event) = 0;
 };
 
-}  // namespace quizlyx::server::interfaces
+} // namespace quizlyx::server::interfaces
 
-#endif  // QUIZLYX_SERVER_INTERFACES_IBROADCAST_SINK_HPP
+#endif // QUIZLYX_SERVER_INTERFACES_IBROADCAST_SINK_HPP

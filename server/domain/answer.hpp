@@ -11,6 +11,6 @@ struct PlayerAnswer {
   std::chrono::milliseconds time_since_question_start_ms;
 };
 
-}  // namespace quizlyx::server::domain
+} // namespace quizlyx::server::domain
 
-#endif  // QUIZLYX_SERVER_DOMAIN_ANSWER_HPP
+#endif // QUIZLYX_SERVER_DOMAIN_ANSWER_HPP

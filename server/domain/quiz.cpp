@@ -8,15 +8,18 @@ bool IsIndexValid(size_t idx, size_t options_count) {
   return idx < options_count;
 }
 
-}  // namespace
+} // namespace
 
 bool Validate(const Question& q) {
-  if (q.text.empty() || q.options.empty()) return false;
-  if (q.time_limit_ms.count() <= 0) return false;
+  if (q.text.empty() || q.options.empty())
+    return false;
+  if (q.time_limit_ms.count() <= 0)
+    return false;
 
   const size_t n = q.options.size();
   for (size_t idx : q.correct_indices) {
-    if (!IsIndexValid(idx, n)) return false;
+    if (!IsIndexValid(idx, n))
+      return false;
   }
 
   switch (q.answer_type) {
@@ -29,11 +32,13 @@ bool Validate(const Question& q) {
 }
 
 bool Validate(const Quiz& quiz) {
-  if (quiz.title.empty() || quiz.questions.empty()) return false;
+  if (quiz.title.empty() || quiz.questions.empty())
+    return false;
   for (const auto& q : quiz.questions) {
-    if (!Validate(q)) return false;
+    if (!Validate(q))
+      return false;
   }
   return true;
 }
 
-}  // namespace quizlyx::server::domain
+} // namespace quizlyx::server::domain

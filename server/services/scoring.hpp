@@ -8,6 +8,6 @@ namespace quizlyx::server::services {
 
 int CalculatePoints(const domain::Question& question, const domain::PlayerAnswer& answer);
 
-}  // namespace quizlyx::server::services
+} // namespace quizlyx::server::services
 
-#endif  // QUIZLYX_SERVER_SERVICES_SCORING_HPP
+#endif // QUIZLYX_SERVER_SERVICES_SCORING_HPP

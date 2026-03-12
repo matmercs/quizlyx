@@ -9,7 +9,7 @@
 namespace quizlyx::server::interfaces {
 
 class ISessionStorage {
- public:
+public:
   virtual ~ISessionStorage() = default;
 
   virtual void Store(domain::Session session) = 0;
@@ -18,6 +18,6 @@ class ISessionStorage {
   virtual std::optional<std::string> FindIdByPin(const std::string& pin) const = 0;
 };
 
-}  // namespace quizlyx::server::interfaces
+} // namespace quizlyx::server::interfaces
 
-#endif  // QUIZLYX_SERVER_INTERFACES_ISESSION_STORAGE_HPP
+#endif // QUIZLYX_SERVER_INTERFACES_ISESSION_STORAGE_HPP

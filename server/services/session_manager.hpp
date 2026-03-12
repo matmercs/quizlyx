@@ -16,7 +16,7 @@
 namespace quizlyx::server::services {
 
 class SessionManager {
- public:
+public:
   struct SessionInfo {
     std::string session_id;
     std::string pin;
@@ -24,8 +24,7 @@ class SessionManager {
 
   SessionManager(QuizRegistry& quiz_registry, interfaces::IBroadcastSink& broadcast_sink);
 
-  std::optional<SessionInfo> CreateSession(const std::string& quiz_code,
-                                           const std::string& host_id);
+  std::optional<SessionInfo> CreateSession(const std::string& quiz_code, const std::string& host_id);
 
   std::optional<domain::Session> GetSessionById(const std::string& session_id) const;
   std::optional<domain::Session> GetSessionByPin(const std::string& pin) const;
@@ -36,10 +35,9 @@ class SessionManager {
   bool StartGame(const std::string& session_id);
   bool NextQuestion(const std::string& session_id);
 
-  bool SubmitAnswer(const std::string& session_id, const std::string& player_id,
-                    const domain::PlayerAnswer& answer);
+  bool SubmitAnswer(const std::string& session_id, const std::string& player_id, const domain::PlayerAnswer& answer);
 
- private:
+private:
   QuizRegistry& quiz_registry_;
   interfaces::IBroadcastSink& broadcast_sink_;
 
@@ -52,7 +50,6 @@ class SessionManager {
   std::string GeneratePin() const;
 };
 
-}  // namespace quizlyx::server::services
+} // namespace quizlyx::server::services
 
-#endif  // QUIZLYX_SERVER_SERVICES_SESSION_MANAGER_HPP
-
+#endif // QUIZLYX_SERVER_SERVICES_SESSION_MANAGER_HPP

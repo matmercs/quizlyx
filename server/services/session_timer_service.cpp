@@ -3,11 +3,11 @@
 namespace quizlyx::server::services {
 
 SessionTimerService::SessionTimerService(interfaces::ITimeProvider& time_provider,
-                                         std::chrono::milliseconds update_interval)
-    : time_provider_(time_provider), update_interval_(update_interval) {}
+                                         std::chrono::milliseconds update_interval) :
+    time_provider_(time_provider), update_interval_(update_interval) {
+}
 
-void SessionTimerService::SetDeadline(const std::string& session_id,
-                                      std::chrono::steady_clock::time_point deadline) {
+void SessionTimerService::SetDeadline(const std::string& session_id, std::chrono::steady_clock::time_point deadline) {
   std::lock_guard lock(mutex_);
   deadlines_[session_id] = deadline;
 }
@@ -42,8 +42,7 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
       }
 
       auto last_it = last_updates_.find(session_id);
-      const bool should_emit_update =
-          last_it == last_updates_.end() || now - last_it->second >= update_interval_;
+      const bool should_emit_update = last_it == last_updates_.end() || now - last_it->second >= update_interval_;
 
       if (should_emit_update) {
         result.push_back(TimerEvent{
@@ -65,5 +64,4 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
   return result;
 }
 
-}  // namespace quizlyx::server::services
-
+} // namespace quizlyx::server::services

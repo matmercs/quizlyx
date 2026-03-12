@@ -25,7 +25,7 @@
 namespace quizlyx::server {
 
 class Logger {
- public:
+public:
   static Logger& Instance() {
     static Logger instance;
     return instance;
@@ -35,11 +35,10 @@ class Logger {
     std::lock_guard lock(mutex_);
     std::ostringstream tid;
     tid << std::this_thread::get_id();
-    std::cout << "[Worker-" << tid.str().substr(tid.str().size() - 4) << "][" 
-              << prefix << "] " << message << std::endl;
+    std::cout << "[Worker-" << tid.str().substr(tid.str().size() - 4) << "][" << prefix << "] " << message << std::endl;
   }
 
- private:
+private:
   std::mutex mutex_;
 };
 
@@ -73,12 +72,11 @@ struct NextQuestionCmd {
   int game_num;
 };
 
-using Command = std::variant<CreateSessionCmd, JoinPlayerCmd, StartGameCmd, 
-                              SubmitAnswerCmd, NextQuestionCmd>;
+using Command = std::variant<CreateSessionCmd, JoinPlayerCmd, StartGameCmd, SubmitAnswerCmd, NextQuestionCmd>;
 
 // Thread-safe command queue
 class CommandQueue {
- public:
+public:
   void Push(Command cmd) {
     std::lock_guard lock(mutex_);
     queue_.push(std::move(cmd));
@@ -88,11 +86,11 @@ class CommandQueue {
   Command Pop() {
     std::unique_lock lock(mutex_);
     cv_.wait(lock, [this] { return !queue_.empty() || stop_; });
-    
+
     if (stop_ && queue_.empty()) {
-      return CreateSessionCmd{};  // dummy
+      return CreateSessionCmd{}; // dummy
     }
-    
+
     Command cmd = std::move(queue_.front());
     queue_.pop();
     return cmd;
@@ -109,7 +107,7 @@ class CommandQueue {
     return stop_;
   }
 
- private:
+private:
   mutable std::mutex mutex_;
   std::condition_variable cv_;
   std::queue<Command> queue_;
@@ -117,14 +115,14 @@ class CommandQueue {
 };
 
 class SteadyTimeProvider : public interfaces::ITimeProvider {
- public:
+public:
   std::chrono::steady_clock::time_point Now() const override {
     return std::chrono::steady_clock::now();
   }
 };
 
 class LoggingBroadcastSink : public interfaces::IBroadcastSink {
- public:
+public:
   void Broadcast(const std::string& session_id, const events::GameEvent& event) override {
     std::ostringstream msg;
     msg << "Session[" << session_id.substr(0, 6) << "] ";
@@ -158,18 +156,17 @@ struct SessionInfo {
 };
 
 class Demo {
- public:
-  Demo()
-      : session_manager_(quiz_registry_, broadcast_sink_),
-        timer_service_(time_provider_, std::chrono::milliseconds{200}),
-        commands_(quiz_registry_, session_manager_),
-        stop_flag_(false) {}
+public:
+  Demo() :
+      session_manager_(quiz_registry_, broadcast_sink_), timer_service_(time_provider_, std::chrono::milliseconds{200}),
+      commands_(quiz_registry_, session_manager_), stop_flag_(false) {
+  }
 
   void Run() {
     std::cout << "\n=== Worker Pool Architecture Demo ===\n" << std::endl;
 
     CreateQuizzes();
-    
+
     // Start Timer Thread
     std::thread timer_thread([this]() { RunTimerThread(); });
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
@@ -180,7 +177,7 @@ class Demo {
       workers.emplace_back([this, i]() { RunWorker(i); });
     }
     Logger::Instance().Log("SETUP", "Worker pool started (4 workers)");
-    
+
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
     // Simulate 3 games with client threads
@@ -196,7 +193,7 @@ class Demo {
     }
 
     std::cout << "\n=== All games completed ===\n" << std::endl;
-    
+
     // Stop workers
     command_queue_.Stop();
     for (auto& w : workers) {
@@ -205,32 +202,30 @@ class Demo {
 
     stop_flag_ = true;
     timer_thread.join();
-    
+
     Logger::Instance().Log("SHUTDOWN", "All threads stopped");
   }
 
- private:
+private:
   void CreateQuizzes() {
     domain::Quiz quiz1;
     quiz1.title = "Speed Math";
-    quiz1.questions.push_back({"2+2=?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1},
-                               std::chrono::milliseconds(3000)});
-    quiz1.questions.push_back({"5*2=?", domain::AnswerType::SingleChoice, {"8", "10", "12"}, {1},
-                               std::chrono::milliseconds(3000)});
+    quiz1.questions.push_back(
+        {"2+2=?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1}, std::chrono::milliseconds(3000)});
+    quiz1.questions.push_back(
+        {"5*2=?", domain::AnswerType::SingleChoice, {"8", "10", "12"}, {1}, std::chrono::milliseconds(3000)});
     quiz1_code_ = *commands_.CreateQuiz(std::move(quiz1));
 
     domain::Quiz quiz2;
     quiz2.title = "Logic";
     quiz2.questions.push_back(
-        {"Primes?", domain::AnswerType::MultipleChoice, {"2", "3", "4", "6"},
-         {0, 1}, std::chrono::milliseconds(4000)});
+        {"Primes?", domain::AnswerType::MultipleChoice, {"2", "3", "4", "6"}, {0, 1}, std::chrono::milliseconds(4000)});
     quiz2_code_ = *commands_.CreateQuiz(std::move(quiz2));
 
     domain::Quiz quiz3;
     quiz3.title = "Quick";
     quiz3.questions.push_back(
-        {"1+1=?", domain::AnswerType::SingleChoice, {"1", "2", "3"}, {1},
-         std::chrono::milliseconds(2000)});
+        {"1+1=?", domain::AnswerType::SingleChoice, {"1", "2", "3"}, {1}, std::chrono::milliseconds(2000)});
     quiz3_code_ = *commands_.CreateQuiz(std::move(quiz3));
 
     Logger::Instance().Log("SETUP", "Created 3 quizzes");
@@ -239,69 +234,64 @@ class Demo {
   void RunWorker(int worker_id) {
     std::ostringstream tid;
     tid << std::this_thread::get_id();
-    Logger::Instance().Log("WORKER" + std::to_string(worker_id), 
+    Logger::Instance().Log("WORKER" + std::to_string(worker_id),
                            "Started (tid=" + tid.str().substr(tid.str().size() - 4) + ")");
 
     while (!command_queue_.IsStopped()) {
       Command cmd = command_queue_.Pop();
-      
-      if (command_queue_.IsStopped()) break;
 
-      std::visit([this, worker_id](auto&& command) {
-        using T = std::decay_t<decltype(command)>;
-        
-        if constexpr (std::is_same_v<T, CreateSessionCmd>) {
-          auto result = commands_.CreateSession(command.quiz_code, command.host_id);
-          if (result) {
-            std::lock_guard lock(sessions_mutex_);
-            session_info_[command.game_num] = {result->session_id, result->pin, command.quiz_code};
-            Logger::Instance().Log("CMD", 
-              "Game" + std::to_string(command.game_num) + " CreateSession " + result->pin);
-          }
-        }
-        else if constexpr (std::is_same_v<T, JoinPlayerCmd>) {
-          commands_.JoinAsPlayer(command.pin, command.player_id);
-          Logger::Instance().Log("CMD", 
-            "Game" + std::to_string(command.game_num) + " JoinPlayer " + command.player_id);
-        }
-        else if constexpr (std::is_same_v<T, StartGameCmd>) {
-          commands_.StartGame(command.session_id);
-          
-          auto session = session_manager_.GetSessionById(command.session_id);
-          if (session && session->has_question_deadline) {
-            timer_service_.SetDeadline(command.session_id, session->question_deadline);
-          }
-          
-          Logger::Instance().Log("CMD", 
-            "Game" + std::to_string(command.game_num) + " StartGame");
-        }
-        else if constexpr (std::is_same_v<T, SubmitAnswerCmd>) {
-          commands_.SubmitAnswer(command.session_id, command.player_id, command.answer);
-          Logger::Instance().Log("CMD", 
-            "Game" + std::to_string(command.game_num) + " SubmitAnswer " + command.player_id);
-        }
-        else if constexpr (std::is_same_v<T, NextQuestionCmd>) {
-          timer_service_.ClearDeadline(command.session_id);
-          commands_.NextQuestion(command.session_id);
-          
-          auto session = session_manager_.GetSessionById(command.session_id);
-          if (session && session->has_question_deadline) {
-            timer_service_.SetDeadline(command.session_id, session->question_deadline);
-          }
-          
-          Logger::Instance().Log("CMD", 
-            "Game" + std::to_string(command.game_num) + " NextQuestion");
-        }
-      }, cmd);
+      if (command_queue_.IsStopped())
+        break;
+
+      std::visit(
+          [this, worker_id](auto&& command) {
+            using T = std::decay_t<decltype(command)>;
+
+            if constexpr (std::is_same_v<T, CreateSessionCmd>) {
+              auto result = commands_.CreateSession(command.quiz_code, command.host_id);
+              if (result) {
+                std::lock_guard lock(sessions_mutex_);
+                session_info_[command.game_num] = {result->session_id, result->pin, command.quiz_code};
+                Logger::Instance().Log("CMD",
+                                       "Game" + std::to_string(command.game_num) + " CreateSession " + result->pin);
+              }
+            } else if constexpr (std::is_same_v<T, JoinPlayerCmd>) {
+              commands_.JoinAsPlayer(command.pin, command.player_id);
+              Logger::Instance().Log("CMD",
+                                     "Game" + std::to_string(command.game_num) + " JoinPlayer " + command.player_id);
+            } else if constexpr (std::is_same_v<T, StartGameCmd>) {
+              commands_.StartGame(command.session_id);
+
+              auto session = session_manager_.GetSessionById(command.session_id);
+              if (session && session->has_question_deadline) {
+                timer_service_.SetDeadline(command.session_id, session->question_deadline);
+              }
+
+              Logger::Instance().Log("CMD", "Game" + std::to_string(command.game_num) + " StartGame");
+            } else if constexpr (std::is_same_v<T, SubmitAnswerCmd>) {
+              commands_.SubmitAnswer(command.session_id, command.player_id, command.answer);
+              Logger::Instance().Log("CMD",
+                                     "Game" + std::to_string(command.game_num) + " SubmitAnswer " + command.player_id);
+            } else if constexpr (std::is_same_v<T, NextQuestionCmd>) {
+              timer_service_.ClearDeadline(command.session_id);
+              commands_.NextQuestion(command.session_id);
+
+              auto session = session_manager_.GetSessionById(command.session_id);
+              if (session && session->has_question_deadline) {
+                timer_service_.SetDeadline(command.session_id, session->question_deadline);
+              }
+
+              Logger::Instance().Log("CMD", "Game" + std::to_string(command.game_num) + " NextQuestion");
+            }
+          },
+          cmd);
     }
 
     Logger::Instance().Log("WORKER" + std::to_string(worker_id), "Stopped");
   }
 
   void SimulateClient(int game_num) {
-    std::string quiz_code = (game_num % 3 == 0) ? quiz1_code_
-                            : (game_num % 3 == 1) ? quiz2_code_
-                                                   : quiz3_code_;
+    std::string quiz_code = (game_num % 3 == 0) ? quiz1_code_ : (game_num % 3 == 1) ? quiz2_code_ : quiz3_code_;
 
     // Create session
     command_queue_.Push(CreateSessionCmd{quiz_code, "host_" + std::to_string(game_num), game_num});
@@ -331,9 +321,11 @@ class Demo {
 
     // Get number of questions
     auto session = session_manager_.GetSessionById(info.session_id);
-    if (!session) return;
+    if (!session)
+      return;
     auto quiz = quiz_registry_.Get(session->quiz_code);
-    if (!quiz) return;
+    if (!quiz)
+      return;
 
     // Play questions
     for (size_t q = 0; q < quiz->questions.size(); ++q) {
@@ -350,9 +342,8 @@ class Demo {
         answer.selected_indices = {static_cast<size_t>(answer_dist(gen))};
         answer.time_since_question_start_ms = std::chrono::milliseconds(delay_dist(gen));
 
-        command_queue_.Push(SubmitAnswerCmd{info.session_id, 
-                                            player + "_g" + std::to_string(game_num), 
-                                            answer, game_num});
+        command_queue_.Push(
+            SubmitAnswerCmd{info.session_id, player + "_g" + std::to_string(game_num), answer, game_num});
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
 
@@ -389,20 +380,20 @@ class Demo {
 
   CommandQueue command_queue_;
   std::atomic<bool> stop_flag_;
-  
+
   std::mutex sessions_mutex_;
   std::unordered_map<int, SessionInfo> session_info_;
-  
+
   std::string quiz1_code_;
   std::string quiz2_code_;
   std::string quiz3_code_;
 };
 
-}  // namespace quizlyx::server
+} // namespace quizlyx::server
 
 int main(int argc, char** argv) {
-  (void)argc;
-  (void)argv;
+  (void) argc;
+  (void) argv;
 
   using namespace quizlyx::server;
 

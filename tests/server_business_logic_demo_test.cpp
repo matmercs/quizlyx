@@ -18,29 +18,33 @@
 namespace quizlyx::server {
 
 class SteadyTimeProvider : public interfaces::ITimeProvider {
- public:
+public:
   std::chrono::steady_clock::time_point Now() const override {
     return std::chrono::steady_clock::now();
   }
 };
 
 class NoOpBroadcastSink : public interfaces::IBroadcastSink {
- public:
-  void Broadcast(const std::string& /*session_id*/,
-                 const events::GameEvent& /*event*/) override {}
+public:
+  void Broadcast(const std::string& /*session_id*/, const events::GameEvent& /*event*/) override {
+  }
 };
 
 static int ScoreOf(const domain::Session& s, const std::string& player_id) {
   for (const auto& p : s.players)
-    if (p.id == player_id) return p.score;
+    if (p.id == player_id)
+      return p.score;
   return -1;
 }
 
 static const char* StateStr(domain::SessionState s) {
   switch (s) {
-    case domain::SessionState::Lobby: return "Lobby";
-    case domain::SessionState::Running: return "Running";
-    case domain::SessionState::Finished: return "Finished";
+    case domain::SessionState::Lobby:
+      return "Lobby";
+    case domain::SessionState::Running:
+      return "Running";
+    case domain::SessionState::Finished:
+      return "Finished";
   }
   return "?";
 }
@@ -51,8 +55,7 @@ static const char* RoleStr(domain::Role r) {
 
 static void PrintSession(const domain::Session& session, const std::string& title) {
   std::cout << "\n--- " << title << " ---\n";
-  std::cout << "  state=" << StateStr(session.state)
-            << "  question=" << session.current_question_index
+  std::cout << "  state=" << StateStr(session.state) << "  question=" << session.current_question_index
             << "  has_deadline=" << (session.has_question_deadline ? "yes" : "no") << "\n";
   std::cout << "  players:\n";
   for (const auto& p : session.players) {
@@ -68,19 +71,19 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   NoOpBroadcastSink broadcast_sink;
   SteadyTimeProvider time_provider;
   services::SessionManager session_manager{quiz_registry, broadcast_sink};
-  services::SessionTimerService timer_service{time_provider,
-                                              std::chrono::milliseconds{100}};
+  services::SessionTimerService timer_service{time_provider, std::chrono::milliseconds{100}};
   app::ServerCommandHandler commands{quiz_registry, session_manager};
 
   domain::Quiz quiz;
   quiz.title = "Math & Logic";
   quiz.description = "Two questions";
   quiz.questions.push_back(
-      {"What is 2+2?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1},
-       std::chrono::milliseconds(5000)});
-  quiz.questions.push_back(
-      {"Select even numbers", domain::AnswerType::MultipleChoice, {"2", "3", "4", "5"}, {0, 2},
-       std::chrono::milliseconds(8000)});
+      {"What is 2+2?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1}, std::chrono::milliseconds(5000)});
+  quiz.questions.push_back({"Select even numbers",
+                            domain::AnswerType::MultipleChoice,
+                            {"2", "3", "4", "5"},
+                            {0, 2},
+                            std::chrono::milliseconds(8000)});
 
   auto quiz_code = commands.CreateQuiz(std::move(quiz));
   ASSERT_TRUE(quiz_code.has_value()) << "CreateQuiz";
@@ -172,8 +175,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   EXPECT_EQ(s6->current_question_index, 2u);
   EXPECT_GT(ScoreOf(*s6, "bob"), ScoreOf(*s6, "alice")) << "bob wins";
 
-  EXPECT_FALSE(commands.JoinAsPlayer(created->pin, "late"))
-      << "join in Running must be rejected";
+  EXPECT_FALSE(commands.JoinAsPlayer(created->pin, "late")) << "join in Running must be rejected";
 
   domain::PlayerAnswer too_late;
   too_late.selected_indices = {0};
@@ -190,19 +192,19 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   NoOpBroadcastSink broadcast_sink;
   SteadyTimeProvider time_provider;
   services::SessionManager session_manager{quiz_registry, broadcast_sink};
-  services::SessionTimerService timer_service{time_provider,
-                                              std::chrono::milliseconds{100}};
+  services::SessionTimerService timer_service{time_provider, std::chrono::milliseconds{100}};
   app::ServerCommandHandler commands{quiz_registry, session_manager};
 
   domain::Quiz quiz;
   quiz.title = "Math & Logic";
   quiz.description = "Two questions";
   quiz.questions.push_back(
-      {"What is 2+2?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1},
-       std::chrono::milliseconds(5000)});
-  quiz.questions.push_back(
-      {"Select even numbers", domain::AnswerType::MultipleChoice, {"2", "3", "4", "5"}, {0, 2},
-       std::chrono::milliseconds(8000)});
+      {"What is 2+2?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1}, std::chrono::milliseconds(5000)});
+  quiz.questions.push_back({"Select even numbers",
+                            domain::AnswerType::MultipleChoice,
+                            {"2", "3", "4", "5"},
+                            {0, 2},
+                            std::chrono::milliseconds(8000)});
 
   auto quiz_code = commands.CreateQuiz(std::move(quiz));
   ASSERT_TRUE(quiz_code.has_value());
@@ -213,13 +215,15 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   std::cout << "[2] Session: id=" << created->session_id << " pin=" << created->pin << "\n";
 
   auto s0 = session_manager.GetSessionById(created->session_id);
-  if (s0) PrintSession(*s0, "После создания (только host)");
+  if (s0)
+    PrintSession(*s0, "После создания (только host)");
 
   ASSERT_TRUE(commands.JoinAsPlayer(created->pin, "alice"));
   ASSERT_TRUE(commands.JoinAsPlayer(created->pin, "bob"));
   std::cout << "[3] alice, bob joined\n";
   auto s1 = session_manager.GetSessionById(created->session_id);
-  if (s1) PrintSession(*s1, "Лобби: host + alice + bob");
+  if (s1)
+    PrintSession(*s1, "Лобби: host + alice + bob");
 
   EXPECT_FALSE(commands.JoinAsPlayer("000000", "eve"));
   std::cout << "[4] Wrong PIN rejected\n";
@@ -227,7 +231,8 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   ASSERT_TRUE(commands.StartGame(created->session_id));
   std::cout << "[5] Game started\n";
   auto s2 = session_manager.GetSessionById(created->session_id);
-  if (s2) PrintSession(*s2, "Running, вопрос 0");
+  if (s2)
+    PrintSession(*s2, "Running, вопрос 0");
 
   domain::PlayerAnswer a0{{1}, std::chrono::milliseconds(200)};
   domain::PlayerAnswer b0{{1}, std::chrono::milliseconds(2000)};
@@ -235,7 +240,8 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   ASSERT_TRUE(commands.SubmitAnswer(created->session_id, "bob", b0));
   std::cout << "[6] Answers on question 0\n";
   auto s3 = session_manager.GetSessionById(created->session_id);
-  if (s3) PrintSession(*s3, "После ответов на вопрос 0");
+  if (s3)
+    PrintSession(*s3, "После ответов на вопрос 0");
 
   domain::PlayerAnswer a0_dup{{0}, std::chrono::milliseconds(3000)};
   EXPECT_FALSE(commands.SubmitAnswer(created->session_id, "alice", a0_dup));
@@ -244,7 +250,8 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   ASSERT_TRUE(commands.NextQuestion(created->session_id));
   std::cout << "[8] NextQuestion → вопрос 1\n";
   auto s4 = session_manager.GetSessionById(created->session_id);
-  if (s4) PrintSession(*s4, "Running, вопрос 1");
+  if (s4)
+    PrintSession(*s4, "Running, вопрос 1");
 
   domain::PlayerAnswer a1{{1, 2}, std::chrono::milliseconds(100)};
   domain::PlayerAnswer b1{{0, 2}, std::chrono::milliseconds(500)};
@@ -252,12 +259,14 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   ASSERT_TRUE(commands.SubmitAnswer(created->session_id, "bob", b1));
   std::cout << "[9] Answers on question 1\n";
   auto s5 = session_manager.GetSessionById(created->session_id);
-  if (s5) PrintSession(*s5, "После ответов на вопрос 1");
+  if (s5)
+    PrintSession(*s5, "После ответов на вопрос 1");
 
   ASSERT_TRUE(commands.NextQuestion(created->session_id));
   std::cout << "[10] NextQuestion → Finished\n";
   auto s6 = session_manager.GetSessionById(created->session_id);
-  if (s6) PrintSession(*s6, "Итог: Finished");
+  if (s6)
+    PrintSession(*s6, "Итог: Finished");
 
   EXPECT_FALSE(commands.JoinAsPlayer(created->pin, "late"));
   domain::PlayerAnswer too_late{{0}, std::chrono::milliseconds(0)};
@@ -265,4 +274,4 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   std::cout << "[11] Join/Submit after finish rejected\n";
 }
 
-}  // namespace quizlyx::server
+} // namespace quizlyx::server

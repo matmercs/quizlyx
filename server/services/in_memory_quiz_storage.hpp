@@ -11,16 +11,16 @@
 namespace quizlyx::server::services {
 
 class InMemoryQuizStorage : public interfaces::IQuizStorage {
- public:
+public:
   std::string Create(domain::Quiz quiz) override;
   std::optional<domain::Quiz> Get(const std::string& code) const override;
 
- private:
+private:
   mutable std::mutex mutex_;
   std::unordered_map<std::string, domain::Quiz> quizzes_;
   size_t next_id_ = 0;
 };
 
-}  // namespace quizlyx::server::services
+} // namespace quizlyx::server::services
 
-#endif  // QUIZLYX_SERVER_SERVICES_IN_MEMORY_QUIZ_STORAGE_HPP
+#endif // QUIZLYX_SERVER_SERVICES_IN_MEMORY_QUIZ_STORAGE_HPP

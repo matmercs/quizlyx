@@ -9,13 +9,13 @@
 namespace quizlyx::server::interfaces {
 
 class IQuizStorage {
- public:
+public:
   virtual ~IQuizStorage() = default;
 
   virtual std::string Create(domain::Quiz quiz) = 0;
   virtual std::optional<domain::Quiz> Get(const std::string& code) const = 0;
 };
 
-}  // namespace quizlyx::server::interfaces
+} // namespace quizlyx::server::interfaces
 
-#endif  // QUIZLYX_SERVER_INTERFACES_IQUIZ_STORAGE_HPP
+#endif // QUIZLYX_SERVER_INTERFACES_IQUIZ_STORAGE_HPP

@@ -37,6 +37,6 @@ bool RecordAnswer(Session& s, const std::string& player_id);
 bool AdvanceToNextQuestion(Session& s, size_t total_questions);
 void RemovePlayer(Session& s, const std::string& player_id);
 
-}  // namespace quizlyx::server::domain
+} // namespace quizlyx::server::domain
 
-#endif  // QUIZLYX_SERVER_DOMAIN_SESSION_HPP
+#endif // QUIZLYX_SERVER_DOMAIN_SESSION_HPP

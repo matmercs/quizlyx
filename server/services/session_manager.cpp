@@ -14,26 +14,29 @@ namespace {
     leaderboard.entries.push_back(events::LeaderboardEntry{player.id, player.score});
   }
 
-  std::sort(leaderboard.entries.begin(), leaderboard.entries.end(),
+  std::sort(leaderboard.entries.begin(),
+            leaderboard.entries.end(),
             [](const ::quizlyx::server::events::LeaderboardEntry& lhs,
                const ::quizlyx::server::events::LeaderboardEntry& rhs) {
-              if (lhs.score != rhs.score) return lhs.score > rhs.score;
+              if (lhs.score != rhs.score)
+                return lhs.score > rhs.score;
               return lhs.player_id < rhs.player_id;
             });
 
   return leaderboard;
 }
 
-}  // namespace
+} // namespace
 
-SessionManager::SessionManager(QuizRegistry& quiz_registry,
-                               interfaces::IBroadcastSink& broadcast_sink)
-    : quiz_registry_(quiz_registry), broadcast_sink_(broadcast_sink) {}
+SessionManager::SessionManager(QuizRegistry& quiz_registry, interfaces::IBroadcastSink& broadcast_sink) :
+    quiz_registry_(quiz_registry), broadcast_sink_(broadcast_sink) {
+}
 
-std::optional<SessionManager::SessionInfo> SessionManager::CreateSession(
-    const std::string& quiz_code, const std::string& host_id) {
+std::optional<SessionManager::SessionInfo> SessionManager::CreateSession(const std::string& quiz_code,
+                                                                         const std::string& host_id) {
   auto quiz = quiz_registry_.Get(quiz_code);
-  if (!quiz) return std::nullopt;
+  if (!quiz)
+    return std::nullopt;
 
   SessionInfo info;
   domain::Session session;
@@ -65,20 +68,22 @@ std::optional<SessionManager::SessionInfo> SessionManager::CreateSession(
   return info;
 }
 
-std::optional<domain::Session> SessionManager::GetSessionById(
-    const std::string& session_id) const {
+std::optional<domain::Session> SessionManager::GetSessionById(const std::string& session_id) const {
   std::lock_guard lock(mutex_);
   auto it = sessions_by_id_.find(session_id);
-  if (it == sessions_by_id_.end()) return std::nullopt;
+  if (it == sessions_by_id_.end())
+    return std::nullopt;
   return it->second;
 }
 
 std::optional<domain::Session> SessionManager::GetSessionByPin(const std::string& pin) const {
   std::lock_guard lock(mutex_);
   auto pin_it = session_id_by_pin_.find(pin);
-  if (pin_it == session_id_by_pin_.end()) return std::nullopt;
+  if (pin_it == session_id_by_pin_.end())
+    return std::nullopt;
   auto it = sessions_by_id_.find(pin_it->second);
-  if (it == sessions_by_id_.end()) return std::nullopt;
+  if (it == sessions_by_id_.end())
+    return std::nullopt;
   return it->second;
 }
 
@@ -90,15 +95,19 @@ bool SessionManager::JoinAsPlayer(const std::string& pin, const std::string& pla
     std::lock_guard lock(mutex_);
 
     auto pin_it = session_id_by_pin_.find(pin);
-    if (pin_it == session_id_by_pin_.end()) return false;
+    if (pin_it == session_id_by_pin_.end())
+      return false;
     auto it = sessions_by_id_.find(pin_it->second);
-    if (it == sessions_by_id_.end()) return false;
+    if (it == sessions_by_id_.end())
+      return false;
 
     domain::Session& session = it->second;
-    if (!domain::CanJoin(session)) return false;
+    if (!domain::CanJoin(session))
+      return false;
 
     domain::Player player{player_id, domain::Role::Player, 0, false};
-    if (!domain::AddPlayer(session, player)) return false;
+    if (!domain::AddPlayer(session, player))
+      return false;
 
     session_id = session.id;
   }
@@ -114,7 +123,8 @@ bool SessionManager::Leave(const std::string& session_id, const std::string& pla
   {
     std::lock_guard lock(mutex_);
     auto it = sessions_by_id_.find(id);
-    if (it == sessions_by_id_.end()) return false;
+    if (it == sessions_by_id_.end())
+      return false;
 
     domain::Session& session = it->second;
     domain::RemovePlayer(session, player_id);
@@ -132,13 +142,16 @@ bool SessionManager::StartGame(const std::string& session_id) {
     std::lock_guard lock(mutex_);
 
     auto it = sessions_by_id_.find(id);
-    if (it == sessions_by_id_.end()) return false;
+    if (it == sessions_by_id_.end())
+      return false;
 
     domain::Session& session = it->second;
     auto quiz = quiz_registry_.Get(session.quiz_code);
-    if (!quiz || quiz->questions.empty()) return false;
+    if (!quiz || quiz->questions.empty())
+      return false;
 
-    if (!domain::StartGame(session)) return false;
+    if (!domain::StartGame(session))
+      return false;
 
     const auto& question = quiz->questions.at(session.current_question_index);
     auto now = std::chrono::steady_clock::now();
@@ -168,14 +181,17 @@ bool SessionManager::NextQuestion(const std::string& session_id) {
     std::lock_guard lock(mutex_);
 
     auto it = sessions_by_id_.find(id);
-    if (it == sessions_by_id_.end()) return false;
+    if (it == sessions_by_id_.end())
+      return false;
 
     domain::Session& session = it->second;
     auto quiz = quiz_registry_.Get(session.quiz_code);
-    if (!quiz || quiz->questions.empty()) return false;
+    if (!quiz || quiz->questions.empty())
+      return false;
 
     const size_t total_questions = quiz->questions.size();
-    if (!domain::AdvanceToNextQuestion(session, total_questions)) return false;
+    if (!domain::AdvanceToNextQuestion(session, total_questions))
+      return false;
 
     if (session.state == domain::SessionState::Finished) {
       ::quizlyx::server::events::GameFinished finished;
@@ -202,7 +218,8 @@ bool SessionManager::NextQuestion(const std::string& session_id) {
   return true;
 }
 
-bool SessionManager::SubmitAnswer(const std::string& session_id, const std::string& player_id,
+bool SessionManager::SubmitAnswer(const std::string& session_id,
+                                  const std::string& player_id,
                                   const domain::PlayerAnswer& answer) {
   std::string id = session_id;
   std::optional<::quizlyx::server::events::GameEvent> event;
@@ -211,24 +228,30 @@ bool SessionManager::SubmitAnswer(const std::string& session_id, const std::stri
     std::lock_guard lock(mutex_);
 
     auto it = sessions_by_id_.find(id);
-    if (it == sessions_by_id_.end()) return false;
+    if (it == sessions_by_id_.end())
+      return false;
 
     domain::Session& session = it->second;
-    if (!domain::CanSubmitAnswer(session, player_id)) return false;
+    if (!domain::CanSubmitAnswer(session, player_id))
+      return false;
 
     auto quiz = quiz_registry_.Get(session.quiz_code);
-    if (!quiz) return false;
-    if (session.current_question_index >= quiz->questions.size()) return false;
+    if (!quiz)
+      return false;
+    if (session.current_question_index >= quiz->questions.size())
+      return false;
 
     const auto& question = quiz->questions.at(session.current_question_index);
     const int points = CalculatePoints(question, answer);
 
-    if (!domain::RecordAnswer(session, player_id)) return false;
+    if (!domain::RecordAnswer(session, player_id))
+      return false;
 
-    auto player_it = std::find_if(
-        session.players.begin(), session.players.end(),
-        [&player_id](const domain::Player& p) { return p.id == player_id; });
-    if (player_it == session.players.end()) return false;
+    auto player_it = std::find_if(session.players.begin(),
+                                  session.players.end(),
+                                  [&player_id](const domain::Player& p) { return p.id == player_id; });
+    if (player_it == session.players.end())
+      return false;
 
     player_it->score += points;
 
@@ -256,5 +279,4 @@ std::string SessionManager::GeneratePin() const {
   return std::string(buf);
 }
 
-}  // namespace quizlyx::server::services
-
+} // namespace quizlyx::server::services

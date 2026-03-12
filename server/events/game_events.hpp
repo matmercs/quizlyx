@@ -44,9 +44,9 @@ struct GameFinished {
   std::vector<LeaderboardEntry> final_leaderboard;
 };
 
-using GameEvent = std::variant<QuestionStarted, TimerUpdate, QuestionTimeout, Leaderboard,
-                              PlayerJoined, PlayerLeft, GameFinished>;
+using GameEvent =
+    std::variant<QuestionStarted, TimerUpdate, QuestionTimeout, Leaderboard, PlayerJoined, PlayerLeft, GameFinished>;
 
-}  // namespace quizlyx::server::events
+} // namespace quizlyx::server::events
 
-#endif  // QUIZLYX_SERVER_EVENTS_GAME_EVENTS_HPP
+#endif // QUIZLYX_SERVER_EVENTS_GAME_EVENTS_HPP

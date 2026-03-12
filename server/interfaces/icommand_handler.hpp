@@ -15,13 +15,12 @@ struct SessionCreated {
 };
 
 class ICommandHandler {
- public:
+public:
   virtual ~ICommandHandler() = default;
 
   virtual std::optional<std::string> CreateQuiz(domain::Quiz quiz) = 0;
 
-  virtual std::optional<SessionCreated> CreateSession(const std::string& quiz_code,
-                                                      const std::string& host_id) = 0;
+  virtual std::optional<SessionCreated> CreateSession(const std::string& quiz_code, const std::string& host_id) = 0;
 
   virtual bool StartGame(const std::string& session_id) = 0;
   virtual bool NextQuestion(const std::string& session_id) = 0;
@@ -29,11 +28,11 @@ class ICommandHandler {
   virtual bool JoinAsPlayer(const std::string& pin, const std::string& player_id) = 0;
   virtual bool LeaveSession(const std::string& session_id, const std::string& player_id) = 0;
 
-  virtual bool SubmitAnswer(const std::string& session_id, const std::string& player_id,
+  virtual bool SubmitAnswer(const std::string& session_id,
+                            const std::string& player_id,
                             const domain::PlayerAnswer& answer) = 0;
 };
 
-}  // namespace quizlyx::server::interfaces
+} // namespace quizlyx::server::interfaces
 
-#endif  // QUIZLYX_SERVER_INTERFACES_ICOMMAND_HANDLER_HPP
-
+#endif // QUIZLYX_SERVER_INTERFACES_ICOMMAND_HANDLER_HPP

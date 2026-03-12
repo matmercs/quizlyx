@@ -17,20 +17,23 @@ bool IsCorrect(const domain::Question& question, const domain::PlayerAnswer& ans
   return selected == correct;
 }
 
-}  // namespace
+} // namespace
 
 int CalculatePoints(const domain::Question& question, const domain::PlayerAnswer& answer) {
-  if (!IsCorrect(question, answer)) return 0;
+  if (!IsCorrect(question, answer))
+    return 0;
 
   const auto time_limit = question.time_limit_ms.count();
   const auto time_used = answer.time_since_question_start_ms.count();
-  if (time_limit <= 0) return BasePoints;
+  if (time_limit <= 0)
+    return BasePoints;
 
   const auto remaining = time_limit - time_used;
-  if (remaining <= 0) return BasePoints;
+  if (remaining <= 0)
+    return BasePoints;
 
   const int speed_bonus = static_cast<int>(SpeedBonusMax * remaining / time_limit);
   return BasePoints + speed_bonus;
 }
 
-}  // namespace quizlyx::server::services
+} // namespace quizlyx::server::services

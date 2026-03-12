@@ -8,14 +8,13 @@
 namespace quizlyx::server::app {
 
 class ServerCommandHandler : public interfaces::ICommandHandler {
- public:
-  ServerCommandHandler(services::QuizRegistry& quiz_registry,
-                       services::SessionManager& session_manager);
+public:
+  ServerCommandHandler(services::QuizRegistry& quiz_registry, services::SessionManager& session_manager);
 
   std::optional<std::string> CreateQuiz(domain::Quiz quiz) override;
 
-  std::optional<interfaces::SessionCreated> CreateSession(
-      const std::string& quiz_code, const std::string& host_id) override;
+  std::optional<interfaces::SessionCreated> CreateSession(const std::string& quiz_code,
+                                                          const std::string& host_id) override;
 
   bool StartGame(const std::string& session_id) override;
   bool NextQuestion(const std::string& session_id) override;
@@ -23,14 +22,15 @@ class ServerCommandHandler : public interfaces::ICommandHandler {
   bool JoinAsPlayer(const std::string& pin, const std::string& player_id) override;
   bool LeaveSession(const std::string& session_id, const std::string& player_id) override;
 
-  bool SubmitAnswer(const std::string& session_id, const std::string& player_id,
+  bool SubmitAnswer(const std::string& session_id,
+                    const std::string& player_id,
                     const domain::PlayerAnswer& answer) override;
 
- private:
+private:
   services::QuizRegistry& quiz_registry_;
   services::SessionManager& session_manager_;
 };
 
-}  // namespace quizlyx::server::app
+} // namespace quizlyx::server::app
 
-#endif  // QUIZLYX_SERVER_APP_COMMAND_HANDLER_HPP
+#endif // QUIZLYX_SERVER_APP_COMMAND_HANDLER_HPP

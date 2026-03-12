@@ -159,8 +159,14 @@ public:
             msg << "QuestionTimeout";
           } else if constexpr (std::is_same_v<T, events::Leaderboard>) {
             msg << "Leaderboard";
+          } else if constexpr (std::is_same_v<T, events::PlayerJoined>) {
+            msg << "PlayerJoined " << ev.player_id;
+          } else if constexpr (std::is_same_v<T, events::PlayerLeft>) {
+            msg << "PlayerLeft " << ev.player_id;
           } else if constexpr (std::is_same_v<T, events::GameFinished>) {
             msg << "GameFinished";
+          } else {
+            msg << "<unhandled event>";
           }
         },
         event);
@@ -185,7 +191,7 @@ public:
   }
 
   void Run() {
-    std::cout << "\n=== Worker Pool Architecture Demo ===\n" << '\n';
+    std::cout << "\nWorker Pool Architecture Demo\n" << '\n';
 
     CreateQuizzes();
 
@@ -215,7 +221,7 @@ public:
       t.join();
     }
 
-    std::cout << "\n=== All games completed ===\n" << '\n';
+    std::cout << "\nAll games completed\n" << '\n';
 
     // Stop workers
     command_queue_.Stop();

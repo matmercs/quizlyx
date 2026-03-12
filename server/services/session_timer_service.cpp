@@ -33,9 +33,10 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
       if (remaining <= std::chrono::milliseconds::zero()) {
         result.push_back(TimerEvent{
             .session_id = session_id,
-            .event = ::quizlyx::server::events::GameEvent{
-                ::quizlyx::server::events::QuestionTimeout{},
-            },
+            .event =
+                ::quizlyx::server::events::GameEvent{
+                    ::quizlyx::server::events::QuestionTimeout{},
+                },
         });
         expired_sessions.push_back(session_id);
         continue;
@@ -47,9 +48,10 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
       if (should_emit_update) {
         result.push_back(TimerEvent{
             .session_id = session_id,
-            .event = ::quizlyx::server::events::GameEvent{
-                ::quizlyx::server::events::TimerUpdate{remaining},
-            },
+            .event =
+                ::quizlyx::server::events::GameEvent{
+                    ::quizlyx::server::events::TimerUpdate{remaining},
+                },
         });
         last_updates_[session_id] = now;
       }

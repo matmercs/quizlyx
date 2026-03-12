@@ -338,8 +338,8 @@ private:
     std::string quiz_code = (game_num % 3 == 0) ? quiz1_code_ : (game_num % 3 == 1) ? quiz2_code_ : quiz3_code_;
 
     // Create session
-    command_queue_.Push(CreateSessionCmd{
-        .quiz_code = quiz_code, .host_id = "host_" + std::to_string(game_num), .game_num = game_num});
+    command_queue_.Push(
+        CreateSessionCmd{.quiz_code = quiz_code, .host_id = "host_" + std::to_string(game_num), .game_num = game_num});
     std::this_thread::sleep_for(std::chrono::milliseconds(kSessionCreateDelayMs));
 
     // Get session info
@@ -354,8 +354,8 @@ private:
     // Join players
     std::vector<std::string> players = {"alice", "bob", "charlie"};
     for (const auto& player : players) {
-      command_queue_.Push(JoinPlayerCmd{
-          .pin = info.pin, .player_id = player + "_g" + std::to_string(game_num), .game_num = game_num});
+      command_queue_.Push(
+          JoinPlayerCmd{.pin = info.pin, .player_id = player + "_g" + std::to_string(game_num), .game_num = game_num});
       std::this_thread::sleep_for(std::chrono::milliseconds(kPlayerJoinDelayMs));
     }
 

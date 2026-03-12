@@ -75,8 +75,7 @@ bool AdvanceToNextQuestion(Session& s, size_t total_questions) {
 }
 
 void RemovePlayer(Session& s, const std::string& player_id) {
-  auto [first, last] =
-      std::ranges::remove_if(s.players, [&player_id](const Player& p) { return p.id == player_id; });
+  auto [first, last] = std::ranges::remove_if(s.players, [&player_id](const Player& p) { return p.id == player_id; });
   s.players.erase(first, last);
 }
 

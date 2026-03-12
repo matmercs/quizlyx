@@ -87,8 +87,11 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   domain::Quiz quiz;
   quiz.title = "Math & Logic";
   quiz.description = "Two questions";
-  quiz.questions.push_back(
-      {"What is 2+2?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1}, std::chrono::milliseconds(kQ1TimeLimitMs)});
+  quiz.questions.push_back({"What is 2+2?",
+                            domain::AnswerType::SingleChoice,
+                            {"3", "4", "5"},
+                            {1},
+                            std::chrono::milliseconds(kQ1TimeLimitMs)});
   quiz.questions.push_back({"Select even numbers",
                             domain::AnswerType::MultipleChoice,
                             {"2", "3", "4", "5"},
@@ -244,8 +247,10 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   if (s2)
     PrintSession(s2.value(), "Running, вопрос 0");
 
-  domain::PlayerAnswer a0{.selected_indices = {1}, .time_since_question_start_ms = std::chrono::milliseconds(kAliceQ1TimeMs)};
-  domain::PlayerAnswer b0{.selected_indices = {1}, .time_since_question_start_ms = std::chrono::milliseconds(kBobQ1TimeMs)};
+  domain::PlayerAnswer a0{.selected_indices = {1},
+                          .time_since_question_start_ms = std::chrono::milliseconds(kAliceQ1TimeMs)};
+  domain::PlayerAnswer b0{.selected_indices = {1},
+                          .time_since_question_start_ms = std::chrono::milliseconds(kBobQ1TimeMs)};
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "alice", a0));
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "bob", b0));
   std::cout << "[6] Answers on question 0\n";
@@ -253,7 +258,8 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   if (s3)
     PrintSession(s3.value(), "После ответов на вопрос 0");
 
-  domain::PlayerAnswer a0_dup{.selected_indices = {0}, .time_since_question_start_ms = std::chrono::milliseconds(kDupAnswerTimeMs)};
+  domain::PlayerAnswer a0_dup{.selected_indices = {0},
+                              .time_since_question_start_ms = std::chrono::milliseconds(kDupAnswerTimeMs)};
   EXPECT_FALSE(commands.SubmitAnswer(created.value().session_id, "alice", a0_dup));
   std::cout << "[7] Second answer rejected\n";
 
@@ -263,8 +269,10 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   if (s4)
     PrintSession(s4.value(), "Running, вопрос 1");
 
-  domain::PlayerAnswer a1{.selected_indices = {1, 2}, .time_since_question_start_ms = std::chrono::milliseconds(kAliceQ2TimeMs)};
-  domain::PlayerAnswer b1{.selected_indices = {0, 2}, .time_since_question_start_ms = std::chrono::milliseconds(kBobQ2TimeMs)};
+  domain::PlayerAnswer a1{.selected_indices = {1, 2},
+                          .time_since_question_start_ms = std::chrono::milliseconds(kAliceQ2TimeMs)};
+  domain::PlayerAnswer b1{.selected_indices = {0, 2},
+                          .time_since_question_start_ms = std::chrono::milliseconds(kBobQ2TimeMs)};
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "alice", a1));
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "bob", b1));
   std::cout << "[9] Answers on question 1\n";

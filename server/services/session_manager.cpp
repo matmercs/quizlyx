@@ -55,8 +55,7 @@ std::optional<SessionManager::SessionInfo> SessionManager::CreateSession(const s
     session.current_question_index = 0;
     session.has_question_deadline = false;
 
-    domain::Player host{
-        .id = host_id, .role = domain::Role::Host, .score = 0, .answered_current_question = false};
+    domain::Player host{.id = host_id, .role = domain::Role::Host, .score = 0, .answered_current_question = false};
     session.players.push_back(std::move(host));
 
     sessions_by_id_.emplace(session.id, session);
@@ -249,7 +248,8 @@ bool SessionManager::SubmitAnswer(const std::string& session_id,
     if (!domain::RecordAnswer(session, player_id))
       return false;
 
-    auto player_it = std::ranges::find_if(session.players, [&player_id](const domain::Player& p) { return p.id == player_id; });
+    auto player_it =
+        std::ranges::find_if(session.players, [&player_id](const domain::Player& p) { return p.id == player_id; });
     if (player_it == session.players.end())
       return false;
 

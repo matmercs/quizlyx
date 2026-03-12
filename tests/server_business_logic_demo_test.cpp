@@ -100,18 +100,18 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   auto quiz_code_opt = commands.CreateQuiz(std::move(quiz));
   ASSERT_TRUE(quiz_code_opt.has_value()) << "CreateQuiz";
-  const auto& quiz_code = quiz_code_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& quiz_code = quiz_code_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_FALSE(quiz_code.empty());
 
   auto created_opt = commands.CreateSession(quiz_code, "host1");
   ASSERT_TRUE(created_opt.has_value()) << "CreateSession";
-  const auto& created = created_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& created = created_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_FALSE(created.session_id.empty());
   EXPECT_EQ(created.pin.size(), 6u);
 
   auto s0_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s0_opt.has_value());
-  const auto& s0 = s0_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& s0 = s0_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_EQ(s0.state, domain::SessionState::Lobby);
   EXPECT_EQ(s0.players.size(), 1u);
   EXPECT_EQ(s0.current_question_index, 0u);
@@ -122,7 +122,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   auto s1_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s1_opt.has_value());
-  const auto& s1 = s1_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& s1 = s1_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_EQ(s1.state, domain::SessionState::Lobby);
   EXPECT_EQ(s1.players.size(), 3u);
 
@@ -132,7 +132,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   auto s2_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s2_opt.has_value());
-  const auto& s2 = s2_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& s2 = s2_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_EQ(s2.state, domain::SessionState::Running);
   EXPECT_EQ(s2.current_question_index, 0u);
   EXPECT_TRUE(s2.has_question_deadline);
@@ -149,7 +149,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   auto s3_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s3_opt.has_value());
-  const auto& s3 = s3_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& s3 = s3_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   int alice_q0 = ScoreOf(s3, "alice");
   int bob_q0 = ScoreOf(s3, "bob");
   EXPECT_GT(alice_q0, 0);
@@ -166,7 +166,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   auto s4_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s4_opt.has_value());
-  const auto& s4 = s4_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& s4 = s4_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_EQ(s4.state, domain::SessionState::Running);
   EXPECT_EQ(s4.current_question_index, 1u);
   for (const auto& p : s4.players)
@@ -184,7 +184,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   auto s5_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s5_opt.has_value());
-  const auto& s5 = s5_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& s5 = s5_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_EQ(ScoreOf(s5, "alice"), alice_q0) << "alice wrong answer, no new points";
   EXPECT_GT(ScoreOf(s5, "bob"), bob_q0) << "bob correct, gains points";
 
@@ -192,7 +192,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   auto s6_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s6_opt.has_value());
-  const auto& s6 = s6_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& s6 = s6_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_EQ(s6.state, domain::SessionState::Finished);
   EXPECT_EQ(s6.current_question_index, 2u);
   EXPECT_GT(ScoreOf(s6, "bob"), ScoreOf(s6, "alice")) << "bob wins";
@@ -233,12 +233,12 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
 
   auto quiz_code_opt = commands.CreateQuiz(std::move(quiz));
   ASSERT_TRUE(quiz_code_opt.has_value());
-  const auto& quiz_code = quiz_code_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& quiz_code = quiz_code_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   std::cout << "\n[1] Quiz created: code=" << quiz_code << "\n";
 
   auto created_opt = commands.CreateSession(quiz_code, "host1");
   ASSERT_TRUE(created_opt.has_value());
-  const auto& created = created_opt.value();  // NOLINT(bugprone-unchecked-optional-access)
+  const auto& created = created_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   std::cout << "[2] Session: id=" << created.session_id << " pin=" << created.pin << "\n";
 
   auto s0_opt = session_manager.GetSessionById(created.session_id);

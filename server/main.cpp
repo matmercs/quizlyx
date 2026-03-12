@@ -25,25 +25,25 @@
 namespace quizlyx::server {
 
 // Constants for demo timing and display
-constexpr int kSessionIdDisplayLength = 6;
-constexpr int kTimerUpdateIntervalMs = 200;
-constexpr int kWorkerStartDelayMs = 300;
-constexpr int kWorkerCount = 4;
-constexpr int kGameCount = 3;
-constexpr int kClientStartDelayMs = 200;
-constexpr int kQuiz1QuestionTimeMs = 3000;
-constexpr int kQuiz2QuestionTimeMs = 4000;
-constexpr int kQuiz3QuestionTimeMs = 2000;
-constexpr int kSessionCreateDelayMs = 100;
-constexpr int kPlayerJoinDelayMs = 50;
-constexpr int kStartGameDelayMs = 200;
-constexpr int kAfterStartDelayMs = 500;
-constexpr int kQuestionPlayDelayMs = 500;
-constexpr int kAnswerMinDelayMs = 100;
-constexpr int kAnswerMaxDelayMs = 400;
-constexpr int kAnswerSubmitDelayMs = 100;
-constexpr int kAfterAnswersDelayMs = 500;
-constexpr int kNextQuestionDelayMs = 200;
+constexpr int KSessionIdDisplayLength = 6;
+constexpr int KTimerUpdateIntervalMs = 200;
+constexpr int KWorkerStartDelayMs = 300;
+constexpr int KWorkerCount = 4;
+constexpr int KGameCount = 3;
+constexpr int KClientStartDelayMs = 200;
+constexpr int KQuiz1QuestionTimeMs = 3000;
+constexpr int KQuiz2QuestionTimeMs = 4000;
+constexpr int KQuiz3QuestionTimeMs = 2000;
+constexpr int KSessionCreateDelayMs = 100;
+constexpr int KPlayerJoinDelayMs = 50;
+constexpr int KStartGameDelayMs = 200;
+constexpr int KAfterStartDelayMs = 500;
+constexpr int KQuestionPlayDelayMs = 500;
+constexpr int KAnswerMinDelayMs = 100;
+constexpr int KAnswerMaxDelayMs = 400;
+constexpr int KAnswerSubmitDelayMs = 100;
+constexpr int KAfterAnswersDelayMs = 500;
+constexpr int KNextQuestionDelayMs = 200;
 
 class Logger {
 public:
@@ -146,7 +146,7 @@ class LoggingBroadcastSink : public interfaces::IBroadcastSink {
 public:
   void Broadcast(const std::string& session_id, const events::GameEvent& event) override {
     std::ostringstream msg;
-    msg << "Session[" << session_id.substr(0, kSessionIdDisplayLength) << "] ";
+    msg << "Session[" << session_id.substr(0, KSessionIdDisplayLength) << "] ";
 
     std::visit(
         [&msg](auto&& ev) {
@@ -180,7 +180,7 @@ class Demo {
 public:
   Demo() :
       session_manager_(quiz_registry_, broadcast_sink_),
-      timer_service_(time_provider_, std::chrono::milliseconds{kTimerUpdateIntervalMs}),
+      timer_service_(time_provider_, std::chrono::milliseconds{KTimerUpdateIntervalMs}),
       commands_(quiz_registry_, session_manager_), stop_flag_(false) {
   }
 
@@ -191,23 +191,23 @@ public:
 
     // Start Timer Thread
     std::thread timer_thread([this]() { RunTimerThread(); });
-    std::this_thread::sleep_for(std::chrono::milliseconds(kWorkerStartDelayMs));
+    std::this_thread::sleep_for(std::chrono::milliseconds(KWorkerStartDelayMs));
 
     // Start Worker Pool (4 workers)
     std::vector<std::thread> workers;
-    workers.reserve(kWorkerCount);
-    for (int i = 0; i < kWorkerCount; ++i) {
+    workers.reserve(KWorkerCount);
+    for (int i = 0; i < KWorkerCount; ++i) {
       workers.emplace_back([this, i]() { RunWorker(i); });
     }
     Logger::Instance().Log("SETUP", "Worker pool started (4 workers)");
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(kWorkerStartDelayMs));
+    std::this_thread::sleep_for(std::chrono::milliseconds(KWorkerStartDelayMs));
 
     // Simulate 3 games with client threads
     std::vector<std::thread> client_threads;
-    for (int i = 0; i < kGameCount; ++i) {
+    for (int i = 0; i < KGameCount; ++i) {
       client_threads.emplace_back([this, i]() { SimulateClient(i); });
-      std::this_thread::sleep_for(std::chrono::milliseconds(kClientStartDelayMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(KClientStartDelayMs));
     }
 
     // Wait for clients to finish
@@ -237,12 +237,12 @@ private:
                                domain::AnswerType::SingleChoice,
                                {"3", "4", "5"},
                                {1},
-                               std::chrono::milliseconds(kQuiz1QuestionTimeMs)});
+                               std::chrono::milliseconds(KQuiz1QuestionTimeMs)});
     quiz1.questions.push_back({"5*2=?",
                                domain::AnswerType::SingleChoice,
                                {"8", "10", "12"},
                                {1},
-                               std::chrono::milliseconds(kQuiz1QuestionTimeMs)});
+                               std::chrono::milliseconds(KQuiz1QuestionTimeMs)});
     auto quiz1_code = commands_.CreateQuiz(std::move(quiz1));
     if (quiz1_code) {
       quiz1_code_ = *quiz1_code;
@@ -254,7 +254,7 @@ private:
                                domain::AnswerType::MultipleChoice,
                                {"2", "3", "4", "6"},
                                {0, 1},
-                               std::chrono::milliseconds(kQuiz2QuestionTimeMs)});
+                               std::chrono::milliseconds(KQuiz2QuestionTimeMs)});
     auto quiz2_code = commands_.CreateQuiz(std::move(quiz2));
     if (quiz2_code) {
       quiz2_code_ = *quiz2_code;
@@ -266,7 +266,7 @@ private:
                                domain::AnswerType::SingleChoice,
                                {"1", "2", "3"},
                                {1},
-                               std::chrono::milliseconds(kQuiz3QuestionTimeMs)});
+                               std::chrono::milliseconds(KQuiz3QuestionTimeMs)});
     auto quiz3_code = commands_.CreateQuiz(std::move(quiz3));
     if (quiz3_code) {
       quiz3_code_ = *quiz3_code;
@@ -340,7 +340,7 @@ private:
     // Create session
     command_queue_.Push(
         CreateSessionCmd{.quiz_code = quiz_code, .host_id = "host_" + std::to_string(game_num), .game_num = game_num});
-    std::this_thread::sleep_for(std::chrono::milliseconds(kSessionCreateDelayMs));
+    std::this_thread::sleep_for(std::chrono::milliseconds(KSessionCreateDelayMs));
 
     // Get session info
     SessionInfo info;
@@ -356,14 +356,14 @@ private:
     for (const auto& player : players) {
       command_queue_.Push(
           JoinPlayerCmd{.pin = info.pin, .player_id = player + "_g" + std::to_string(game_num), .game_num = game_num});
-      std::this_thread::sleep_for(std::chrono::milliseconds(kPlayerJoinDelayMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(KPlayerJoinDelayMs));
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(kStartGameDelayMs));
+    std::this_thread::sleep_for(std::chrono::milliseconds(KStartGameDelayMs));
 
     // Start game
     command_queue_.Push(StartGameCmd{.session_id = info.session_id, .game_num = game_num});
-    std::this_thread::sleep_for(std::chrono::milliseconds(kAfterStartDelayMs));
+    std::this_thread::sleep_for(std::chrono::milliseconds(KAfterStartDelayMs));
 
     // Get number of questions
     auto session = session_manager_.GetSessionById(info.session_id);
@@ -375,14 +375,14 @@ private:
 
     // Play questions
     for (size_t q = 0; q < quiz->questions.size(); ++q) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(kQuestionPlayDelayMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(KQuestionPlayDelayMs));
 
       // Submit answers
       for (const auto& player : players) {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> answer_dist(0, 2);
-        std::uniform_int_distribution<> delay_dist(kAnswerMinDelayMs, kAnswerMaxDelayMs);
+        std::uniform_int_distribution<> delay_dist(KAnswerMinDelayMs, KAnswerMaxDelayMs);
 
         domain::PlayerAnswer answer;
         answer.selected_indices = {static_cast<size_t>(answer_dist(gen))};
@@ -392,14 +392,14 @@ private:
                                             .player_id = player + "_g" + std::to_string(game_num),
                                             .answer = answer,
                                             .game_num = game_num});
-        std::this_thread::sleep_for(std::chrono::milliseconds(kAnswerSubmitDelayMs));
+        std::this_thread::sleep_for(std::chrono::milliseconds(KAnswerSubmitDelayMs));
       }
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(kAfterAnswersDelayMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(KAfterAnswersDelayMs));
 
       // Next question
       command_queue_.Push(NextQuestionCmd{.session_id = info.session_id, .game_num = game_num});
-      std::this_thread::sleep_for(std::chrono::milliseconds(kNextQuestionDelayMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(KNextQuestionDelayMs));
     }
   }
 
@@ -407,7 +407,7 @@ private:
     Logger::Instance().Log("TIMER", "Started");
 
     while (!stop_flag_) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(kTimerUpdateIntervalMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(KTimerUpdateIntervalMs));
 
       auto events = timer_service_.Tick();
       for (const auto& timer_event : events) {

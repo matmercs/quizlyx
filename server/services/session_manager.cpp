@@ -270,8 +270,9 @@ std::string SessionManager::GenerateSessionId() {
 }
 
 std::string SessionManager::GeneratePin() const {
+  constexpr int KPinMaxValue = 999999;
   static thread_local std::mt19937 rng{std::random_device{}()};
-  std::uniform_int_distribution<int> dist(0, 999999);
+  std::uniform_int_distribution<int> dist(0, KPinMaxValue);
   const int value = dist(rng);
   return std::format("{:06d}", value);
 }

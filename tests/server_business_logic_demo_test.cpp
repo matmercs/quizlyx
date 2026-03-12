@@ -18,14 +18,14 @@
 namespace quizlyx::server {
 
 // Test constants
-constexpr int kTimerIntervalMs = 100;
-constexpr int kQ1TimeLimitMs = 5000;
-constexpr int kQ2TimeLimitMs = 8000;
-constexpr int kAliceQ1TimeMs = 200;
-constexpr int kBobQ1TimeMs = 2000;
-constexpr int kDupAnswerTimeMs = 3000;
-constexpr int kAliceQ2TimeMs = 100;
-constexpr int kBobQ2TimeMs = 500;
+constexpr int KTimerIntervalMs = 100;
+constexpr int KQ1TimeLimitMs = 5000;
+constexpr int KQ2TimeLimitMs = 8000;
+constexpr int KAliceQ1TimeMs = 200;
+constexpr int KBobQ1TimeMs = 2000;
+constexpr int KDupAnswerTimeMs = 3000;
+constexpr int KAliceQ2TimeMs = 100;
+constexpr int KBobQ2TimeMs = 500;
 
 class SteadyTimeProvider : public interfaces::ITimeProvider {
 public:
@@ -91,12 +91,12 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
                             domain::AnswerType::SingleChoice,
                             {"3", "4", "5"},
                             {1},
-                            std::chrono::milliseconds(kQ1TimeLimitMs)});
+                            std::chrono::milliseconds(KQ1TimeLimitMs)});
   quiz.questions.push_back({"Select even numbers",
                             domain::AnswerType::MultipleChoice,
                             {"2", "3", "4", "5"},
                             {0, 2},
-                            std::chrono::milliseconds(kQ2TimeLimitMs)});
+                            std::chrono::milliseconds(KQ2TimeLimitMs)});
 
   auto quiz_code = commands.CreateQuiz(std::move(quiz));
   ASSERT_TRUE(quiz_code.has_value()) << "CreateQuiz";
@@ -134,12 +134,12 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   domain::PlayerAnswer a0;
   a0.selected_indices = {1};
-  a0.time_since_question_start_ms = std::chrono::milliseconds(kAliceQ1TimeMs);
+  a0.time_since_question_start_ms = std::chrono::milliseconds(KAliceQ1TimeMs);
   EXPECT_TRUE(commands.SubmitAnswer(created.value().session_id, "alice", a0));
 
   domain::PlayerAnswer b0;
   b0.selected_indices = {1};
-  b0.time_since_question_start_ms = std::chrono::milliseconds(kBobQ1TimeMs);
+  b0.time_since_question_start_ms = std::chrono::milliseconds(KBobQ1TimeMs);
   EXPECT_TRUE(commands.SubmitAnswer(created.value().session_id, "bob", b0));
 
   auto s3 = session_manager.GetSessionById(created.value().session_id);
@@ -152,7 +152,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   domain::PlayerAnswer a0_dup;
   a0_dup.selected_indices = {0};
-  a0_dup.time_since_question_start_ms = std::chrono::milliseconds(kDupAnswerTimeMs);
+  a0_dup.time_since_question_start_ms = std::chrono::milliseconds(KDupAnswerTimeMs);
   EXPECT_FALSE(commands.SubmitAnswer(created.value().session_id, "alice", a0_dup))
       << "second answer on same question must be rejected";
 
@@ -167,12 +167,12 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
 
   domain::PlayerAnswer a1;
   a1.selected_indices = {1, 2};
-  a1.time_since_question_start_ms = std::chrono::milliseconds(kAliceQ2TimeMs);
+  a1.time_since_question_start_ms = std::chrono::milliseconds(KAliceQ2TimeMs);
   EXPECT_TRUE(commands.SubmitAnswer(created.value().session_id, "alice", a1));
 
   domain::PlayerAnswer b1;
   b1.selected_indices = {0, 2};
-  b1.time_since_question_start_ms = std::chrono::milliseconds(kBobQ2TimeMs);
+  b1.time_since_question_start_ms = std::chrono::milliseconds(KBobQ2TimeMs);
   EXPECT_TRUE(commands.SubmitAnswer(created.value().session_id, "bob", b1));
 
   auto s5 = session_manager.GetSessionById(created.value().session_id);
@@ -205,19 +205,22 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   NoOpBroadcastSink broadcast_sink;
   SteadyTimeProvider time_provider;
   services::SessionManager session_manager{quiz_registry, broadcast_sink};
-  services::SessionTimerService timer_service{time_provider, std::chrono::milliseconds{100}};
+  services::SessionTimerService timer_service{time_provider, std::chrono::milliseconds{KTimerIntervalMs}};
   app::ServerCommandHandler commands{quiz_registry, session_manager};
 
   domain::Quiz quiz;
   quiz.title = "Math & Logic";
   quiz.description = "Two questions";
-  quiz.questions.push_back(
-      {"What is 2+2?", domain::AnswerType::SingleChoice, {"3", "4", "5"}, {1}, std::chrono::milliseconds(5000)});
+  quiz.questions.push_back({"What is 2+2?",
+                            domain::AnswerType::SingleChoice,
+                            {"3", "4", "5"},
+                            {1},
+                            std::chrono::milliseconds(KQ1TimeLimitMs)});
   quiz.questions.push_back({"Select even numbers",
                             domain::AnswerType::MultipleChoice,
                             {"2", "3", "4", "5"},
                             {0, 2},
-                            std::chrono::milliseconds(8000)});
+                            std::chrono::milliseconds(KQ2TimeLimitMs)});
 
   auto quiz_code = commands.CreateQuiz(std::move(quiz));
   ASSERT_TRUE(quiz_code.has_value());
@@ -248,9 +251,9 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
     PrintSession(s2.value(), "Running, вопрос 0");
 
   domain::PlayerAnswer a0{.selected_indices = {1},
-                          .time_since_question_start_ms = std::chrono::milliseconds(kAliceQ1TimeMs)};
+                          .time_since_question_start_ms = std::chrono::milliseconds(KAliceQ1TimeMs)};
   domain::PlayerAnswer b0{.selected_indices = {1},
-                          .time_since_question_start_ms = std::chrono::milliseconds(kBobQ1TimeMs)};
+                          .time_since_question_start_ms = std::chrono::milliseconds(KBobQ1TimeMs)};
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "alice", a0));
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "bob", b0));
   std::cout << "[6] Answers on question 0\n";
@@ -259,7 +262,7 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
     PrintSession(s3.value(), "После ответов на вопрос 0");
 
   domain::PlayerAnswer a0_dup{.selected_indices = {0},
-                              .time_since_question_start_ms = std::chrono::milliseconds(kDupAnswerTimeMs)};
+                              .time_since_question_start_ms = std::chrono::milliseconds(KDupAnswerTimeMs)};
   EXPECT_FALSE(commands.SubmitAnswer(created.value().session_id, "alice", a0_dup));
   std::cout << "[7] Second answer rejected\n";
 
@@ -270,9 +273,9 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
     PrintSession(s4.value(), "Running, вопрос 1");
 
   domain::PlayerAnswer a1{.selected_indices = {1, 2},
-                          .time_since_question_start_ms = std::chrono::milliseconds(kAliceQ2TimeMs)};
+                          .time_since_question_start_ms = std::chrono::milliseconds(KAliceQ2TimeMs)};
   domain::PlayerAnswer b1{.selected_indices = {0, 2},
-                          .time_since_question_start_ms = std::chrono::milliseconds(kBobQ2TimeMs)};
+                          .time_since_question_start_ms = std::chrono::milliseconds(KBobQ2TimeMs)};
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "alice", a1));
   ASSERT_TRUE(commands.SubmitAnswer(created.value().session_id, "bob", b1));
   std::cout << "[9] Answers on question 1\n";
@@ -287,7 +290,7 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
     PrintSession(s6.value(), "Итог: Finished");
 
   EXPECT_FALSE(commands.JoinAsPlayer(created.value().pin, "late"));
-  domain::PlayerAnswer too_late{{0}, std::chrono::milliseconds(0)};
+  domain::PlayerAnswer too_late{.selected_indices = {0}, .time_since_question_start_ms = std::chrono::milliseconds(0)};
   EXPECT_FALSE(commands.SubmitAnswer(created.value().session_id, "bob", too_late));
   std::cout << "[11] Join/Submit after finish rejected\n";
 }

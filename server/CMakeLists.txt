@@ -21,3 +21,6 @@ else ()
     add_executable(Server main.cpp)
 endif ()
 target_link_libraries(Server PRIVATE quizlyx_server_lib)
+
+add_executable(ServerDemo demo/main.cpp)
+target_link_libraries(ServerDemo PRIVATE quizlyx_server_lib)

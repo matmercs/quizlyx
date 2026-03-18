@@ -11,6 +11,7 @@ namespace quizlyx::server::domain {
 
 struct Player {
   std::string id;
+  std::string name;
   Role role;
   int score;
   bool answered_current_question;

@@ -27,8 +27,10 @@ bool ServerCommandHandler::NextQuestion(const std::string& session_id) {
   return session_manager_.NextQuestion(session_id);
 }
 
-bool ServerCommandHandler::JoinAsPlayer(const std::string& pin, const std::string& player_id) {
-  return session_manager_.JoinAsPlayer(pin, player_id);
+std::optional<std::string> ServerCommandHandler::JoinAsPlayer(const std::string& session_id,
+                                                              const std::string& pin,
+                                                              const std::string& display_name) {
+  return session_manager_.JoinAsPlayer(session_id, pin, display_name);
 }
 
 bool ServerCommandHandler::LeaveSession(const std::string& session_id, const std::string& player_id) {

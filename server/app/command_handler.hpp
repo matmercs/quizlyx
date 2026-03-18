@@ -19,7 +19,9 @@ public:
   bool StartGame(const std::string& session_id) override;
   bool NextQuestion(const std::string& session_id) override;
 
-  bool JoinAsPlayer(const std::string& pin, const std::string& player_id) override;
+  std::optional<std::string> JoinAsPlayer(const std::string& session_id,
+                                          const std::string& pin,
+                                          const std::string& display_name) override;
   bool LeaveSession(const std::string& session_id, const std::string& player_id) override;
 
   bool SubmitAnswer(const std::string& session_id,

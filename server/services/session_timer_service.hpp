@@ -12,16 +12,20 @@
 
 namespace quizlyx::server::services {
 
+enum class TimerType { QuestionDeadline, AutoAdvance };
+
 class SessionTimerService {
 public:
   struct TimerEvent {
     std::string session_id;
     ::quizlyx::server::events::GameEvent event;
+    TimerType timer_type = TimerType::QuestionDeadline;
   };
 
   SessionTimerService(interfaces::ITimeProvider& time_provider, std::chrono::milliseconds update_interval);
 
   void SetDeadline(const std::string& session_id, std::chrono::steady_clock::time_point deadline);
+  void SetAutoAdvanceDeadline(const std::string& session_id, std::chrono::steady_clock::time_point deadline);
   void ClearDeadline(const std::string& session_id);
 
   std::vector<TimerEvent> Tick();
@@ -33,6 +37,7 @@ private:
   std::mutex mutex_;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> deadlines_;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> last_updates_;
+  std::unordered_map<std::string, std::chrono::steady_clock::time_point> auto_advance_deadlines_;
 };
 
 } // namespace quizlyx::server::services

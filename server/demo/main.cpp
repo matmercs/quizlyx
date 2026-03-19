@@ -300,7 +300,7 @@ private:
             using T = std::decay_t<decltype(command)>;
 
             if constexpr (std::is_same_v<T, CreateSessionCmd>) {
-              auto result = commands_.CreateSession(command.quiz_code, command.host_id);
+              auto result = commands_.CreateSession(command.quiz_code, command.host_id, 0);
               if (result) {
                 DemoSessionInfo info{result->session_id, result->pin, command.quiz_code};
                 command.result.set_value(info);
@@ -310,9 +310,11 @@ private:
                 command.result.set_value(DemoSessionInfo{});
               }
             } else if constexpr (std::is_same_v<T, JoinPlayerCmd>) {
-              auto player_id = commands_.JoinAsPlayer(command.session_id, command.pin, command.display_name);
-              if (player_id) {
-                Logger::Instance().Log("CMD", "Game" + std::to_string(command.game_num) + " JoinPlayer " + *player_id);
+              std::string player_id = "PD" + std::to_string(next_demo_player_id_++);
+              bool joined = commands_.JoinAsPlayer(command.session_id, command.pin, player_id, command.display_name);
+              if (joined) {
+                Logger::Instance().Log("CMD",
+                                       "Game" + std::to_string(command.game_num) + " JoinPlayer " + player_id);
               }
             } else if constexpr (std::is_same_v<T, StartGameCmd>) {
               commands_.StartGame(command.session_id);
@@ -445,6 +447,7 @@ private:
 
   CommandQueue command_queue_;
   std::atomic<bool> stop_flag_;
+  std::atomic<size_t> next_demo_player_id_{0};
 
   std::string quiz1_code_;
   std::string quiz2_code_;

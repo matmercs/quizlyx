@@ -20,14 +20,17 @@ public:
 
   virtual std::optional<std::string> CreateQuiz(domain::Quiz quiz) = 0;
 
-  virtual std::optional<SessionCreated> CreateSession(const std::string& quiz_code, const std::string& host_id) = 0;
+  virtual std::optional<SessionCreated> CreateSession(const std::string& quiz_code,
+                                                      const std::string& host_id,
+                                                      int auto_advance_delay_ms) = 0;
 
   virtual bool StartGame(const std::string& session_id) = 0;
   virtual bool NextQuestion(const std::string& session_id) = 0;
 
-  virtual std::optional<std::string> JoinAsPlayer(const std::string& session_id,
-                                                  const std::string& pin,
-                                                  const std::string& display_name) = 0;
+  virtual bool JoinAsPlayer(const std::string& session_id,
+                            const std::string& pin,
+                            const std::string& player_id,
+                            const std::string& display_name) = 0;
   virtual bool LeaveSession(const std::string& session_id, const std::string& player_id) = 0;
 
   virtual bool SubmitAnswer(const std::string& session_id,

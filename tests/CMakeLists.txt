@@ -16,6 +16,7 @@ add_executable(
         ${PROJECT_NAME}_tests
         test_suites/ProjectIntegrationTestSuite.cpp
         server_business_logic_demo_test.cpp
+        network_integration_test.cpp
         main_tests.cpp
 )
 

@@ -21,6 +21,7 @@ public:
 
   void Start();
   void Stop();
+  uint16_t Port() const { return acceptor_.local_endpoint().port(); }
 
 private:
   void DoAccept();

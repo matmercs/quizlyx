@@ -30,9 +30,7 @@ public:
                                           const std::string& pin,
                                           const std::string& display_name);
   bool LeaveSession(const std::string& session_id, const std::string& player_id);
-  bool SubmitAnswer(const std::string& session_id,
-                    const std::string& player_id,
-                    const domain::PlayerAnswer& answer);
+  bool SubmitAnswer(const std::string& session_id, const std::string& player_id, const domain::PlayerAnswer& answer);
 
   bool Disconnect(const std::string& session_id, const std::string& player_id);
   bool Reconnect(const std::string& session_id, const std::string& player_id);

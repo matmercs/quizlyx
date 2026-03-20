@@ -49,8 +49,7 @@ std::string SerializeGameEvent(const events::GameEvent& event) {
           j["payload"] = {{"entries", entries}};
         } else if constexpr (std::is_same_v<T, events::PlayerJoined>) {
           j["event_type"] = "player_joined";
-          j["payload"] = {{"player_id", ev.player_id},
-                          {"role", ev.role == domain::Role::Host ? "host" : "player"}};
+          j["payload"] = {{"player_id", ev.player_id}, {"role", ev.role == domain::Role::Host ? "host" : "player"}};
         } else if constexpr (std::is_same_v<T, events::PlayerLeft>) {
           j["event_type"] = "player_left";
           j["payload"] = {{"player_id", ev.player_id}};
@@ -78,8 +77,8 @@ domain::Quiz DeserializeQuiz(const nlohmann::json& j) {
     q.text = qj.at("text").get<std::string>();
 
     std::string answer_type_str = qj.value("answer_type", "single_choice");
-    q.answer_type = (answer_type_str == "multiple_choice") ? domain::AnswerType::MultipleChoice
-                                                           : domain::AnswerType::SingleChoice;
+    q.answer_type =
+        (answer_type_str == "multiple_choice") ? domain::AnswerType::MultipleChoice : domain::AnswerType::SingleChoice;
 
     q.options = qj.at("options").get<std::vector<std::string>>();
     q.correct_indices = qj.at("correct_indices").get<std::vector<size_t>>();

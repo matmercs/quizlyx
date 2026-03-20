@@ -17,9 +17,8 @@ WsConnection::~WsConnection() {
 
 void WsConnection::Start() {
   ws_.set_option(websocket::stream_base::timeout::suggested(beast::role_type::server));
-  ws_.set_option(websocket::stream_base::decorator([](websocket::response_type& res) {
-    res.set(boost::beast::http::field::server, "quizlyx");
-  }));
+  ws_.set_option(websocket::stream_base::decorator(
+      [](websocket::response_type& res) { res.set(boost::beast::http::field::server, "quizlyx"); }));
 
   net::dispatch(ws_.get_executor(), beast::bind_front_handler(&WsConnection::DoAccept, shared_from_this()));
 }
@@ -34,12 +33,11 @@ void WsConnection::Send(std::string message) {
 }
 
 void WsConnection::DoAccept() {
-  ws_.async_accept(beast::bind_front_handler(
-      [self = shared_from_this()](beast::error_code ec) {
-        if (ec)
-          return;
-        self->DoRead();
-      }));
+  ws_.async_accept(beast::bind_front_handler([self = shared_from_this()](beast::error_code ec) {
+    if (ec)
+      return;
+    self->DoRead();
+  }));
 }
 
 void WsConnection::DoRead() {

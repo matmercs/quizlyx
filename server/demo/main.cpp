@@ -313,8 +313,7 @@ private:
               std::string player_id = "PD" + std::to_string(next_demo_player_id_++);
               bool joined = commands_.JoinAsPlayer(command.session_id, command.pin, player_id, command.display_name);
               if (joined) {
-                Logger::Instance().Log("CMD",
-                                       "Game" + std::to_string(command.game_num) + " JoinPlayer " + player_id);
+                Logger::Instance().Log("CMD", "Game" + std::to_string(command.game_num) + " JoinPlayer " + player_id);
               }
             } else if constexpr (std::is_same_v<T, StartGameCmd>) {
               commands_.StartGame(command.session_id);

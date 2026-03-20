@@ -32,10 +32,11 @@ int main(int argc, char** argv) {
   using namespace quizlyx::server;
   namespace net = boost::asio;
 
-  constexpr int kTimerIntervalMs = 200;
-  constexpr int kReconnectTimeoutMs = 30000;
+  constexpr int TimerIntervalMs = 200;
+  constexpr int ReconnectTimeoutMs = 30000;
+  constexpr unsigned short DefaultPort = 8080;
 
-  unsigned short port = 8080;
+  unsigned short port = DefaultPort;
   if (argc > 1) {
     port = static_cast<unsigned short>(std::stoi(argv[1]));
   }
@@ -53,7 +54,7 @@ int main(int argc, char** argv) {
 
   // Business logic
   services::SessionManager session_manager{quiz_registry, broadcast_sink, time_provider};
-  services::SessionTimerService timer_service{time_provider, std::chrono::milliseconds{kTimerIntervalMs}};
+  services::SessionTimerService timer_service{time_provider, std::chrono::milliseconds{TimerIntervalMs}};
   app::ServerCommandHandler command_handler{quiz_registry, session_manager};
 
   // Game controller (bridges network and business logic)
@@ -76,7 +77,7 @@ int main(int argc, char** argv) {
   auto tick_timer = std::make_shared<net::steady_timer>(ioc);
   std::function<void()> schedule_tick;
   schedule_tick = [&, tick_timer]() {
-    tick_timer->expires_after(std::chrono::milliseconds{kTimerIntervalMs});
+    tick_timer->expires_after(std::chrono::milliseconds{TimerIntervalMs});
     tick_timer->async_wait([&, tick_timer](boost::system::error_code ec) {
       if (ec)
         return;
@@ -99,7 +100,7 @@ int main(int argc, char** argv) {
       }
 
       // Cleanup players disconnected longer than timeout
-      session_manager.CleanupDisconnectedPlayers(std::chrono::milliseconds{kReconnectTimeoutMs});
+      session_manager.CleanupDisconnectedPlayers(std::chrono::milliseconds{ReconnectTimeoutMs});
 
       schedule_tick();
     });

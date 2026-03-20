@@ -13,7 +13,7 @@ class WsConnection;
 
 class WsConnectionManager {
 public:
-  void Register(const std::string& session_id, const std::string& player_id, std::shared_ptr<WsConnection> conn);
+  void Register(const std::string& session_id, const std::string& player_id, const std::shared_ptr<WsConnection>& conn);
   void Unregister(const std::string& session_id, const std::string& player_id);
   std::vector<std::shared_ptr<WsConnection>> GetSessionConnections(const std::string& session_id);
 

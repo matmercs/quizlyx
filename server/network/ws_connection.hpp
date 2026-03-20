@@ -1,9 +1,10 @@
 #ifndef QUIZLYX_SERVER_NETWORK_WS_CONNECTION_HPP
 #define QUIZLYX_SERVER_NETWORK_WS_CONNECTION_HPP
 
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
-#include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <queue>
 #include <string>

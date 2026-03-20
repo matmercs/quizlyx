@@ -261,8 +261,8 @@ bool SessionManager::SubmitAnswer(const std::string& session_id,
     if (!domain::RecordAnswer(entry->session, player_id))
       return false;
 
-    auto player_it =
-        std::ranges::find_if(entry->session.players, [&player_id](const domain::Player& p) { return p.id == player_id; });
+    auto player_it = std::ranges::find_if(entry->session.players,
+                                          [&player_id](const domain::Player& p) { return p.id == player_id; });
     if (player_it == entry->session.players.end())
       return false;
 

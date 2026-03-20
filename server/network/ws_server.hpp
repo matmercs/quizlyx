@@ -1,9 +1,9 @@
 #ifndef QUIZLYX_SERVER_NETWORK_WS_SERVER_HPP
 #define QUIZLYX_SERVER_NETWORK_WS_SERVER_HPP
 
-#include <boost/beast/core.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core.hpp>
 
 namespace quizlyx::server::network {
 
@@ -16,12 +16,16 @@ class WsConnectionManager;
 
 class WsServer {
 public:
-  WsServer(net::io_context& ioc, tcp::endpoint endpoint,
-           GameController& controller, WsConnectionManager& manager);
+  WsServer(net::io_context& ioc,
+           const tcp::endpoint& endpoint,
+           GameController& controller,
+           WsConnectionManager& manager);
 
   void Start();
   void Stop();
-  uint16_t Port() const { return acceptor_.local_endpoint().port(); }
+  uint16_t Port() const {
+    return acceptor_.local_endpoint().port();
+  }
 
 private:
   void DoAccept();

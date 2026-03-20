@@ -6,9 +6,9 @@ namespace quizlyx::server::network {
 
 void WsConnectionManager::Register(const std::string& session_id,
                                    const std::string& player_id,
-                                   std::shared_ptr<WsConnection> conn) {
+                                   const std::shared_ptr<WsConnection>& conn) {
   std::unique_lock lock(mutex_);
-  connections_[session_id][player_id] = std::move(conn);
+  connections_[session_id][player_id] = conn;
 }
 
 void WsConnectionManager::Unregister(const std::string& session_id, const std::string& player_id) {
@@ -22,8 +22,7 @@ void WsConnectionManager::Unregister(const std::string& session_id, const std::s
   }
 }
 
-std::vector<std::shared_ptr<WsConnection>> WsConnectionManager::GetSessionConnections(
-    const std::string& session_id) {
+std::vector<std::shared_ptr<WsConnection>> WsConnectionManager::GetSessionConnections(const std::string& session_id) {
   std::shared_lock lock(mutex_);
   std::vector<std::shared_ptr<WsConnection>> result;
   auto it = connections_.find(session_id);

@@ -31,15 +31,15 @@ namespace net = boost::asio;
 using tcp = net::ip::tcp;
 using json = nlohmann::json;
 
-constexpr int kWsTimeoutSeconds = 5;
-constexpr int kDefaultTimeLimitMs = 5000;
-constexpr int kTimerIntervalMs = 200;
-constexpr int kMaxExtraPlayers = 49;
-constexpr int kAnswerTimeFast = 100;
-constexpr int kAnswerTimeMedium = 150;
-constexpr int kAnswerTimeNormal = 200;
-constexpr int kAnswerTimeSlow = 300;
-constexpr int kAnswerTimeVerySlow = 500;
+constexpr int WsTimeoutSeconds = 5;
+constexpr int DefaultTimeLimitMs = 5000;
+constexpr int TimerIntervalMs = 200;
+constexpr int MaxExtraPlayers = 49;
+constexpr int AnswerTimeFast = 100;
+constexpr int AnswerTimeMedium = 150;
+constexpr int AnswerTimeNormal = 200;
+constexpr int AnswerTimeSlow = 300;
+constexpr int AnswerTimeVerySlow = 500;
 
 class TestTimeProvider : public interfaces::ITimeProvider {
 public:
@@ -90,7 +90,7 @@ public:
 
 private:
   json ReadRaw() {
-    beast::get_lowest_layer(ws_).expires_after(std::chrono::seconds(kWsTimeoutSeconds));
+    beast::get_lowest_layer(ws_).expires_after(std::chrono::seconds(WsTimeoutSeconds));
     beast::flat_buffer buf;
     ws_.read(buf);
     return json::parse(beast::buffers_to_string(buf.data()));
@@ -103,7 +103,7 @@ private:
 
 using ClientPtr = std::unique_ptr<TestClient>;
 
-static json MakeQuizPayload(const std::string& title, int time_limit_ms = kDefaultTimeLimitMs) {
+static json MakeQuizPayload(const std::string& title, int time_limit_ms = DefaultTimeLimitMs) {
   return {{"title", title},
           {"description", "test quiz"},
           {"questions",
@@ -129,7 +129,7 @@ protected:
     broadcast_sink_ = std::make_unique<network::WsBroadcastSink>(*connection_manager_);
     session_manager_ = std::make_unique<services::SessionManager>(*quiz_registry_, *broadcast_sink_, *time_provider_);
     timer_service_ =
-        std::make_unique<services::SessionTimerService>(*time_provider_, std::chrono::milliseconds{kTimerIntervalMs});
+        std::make_unique<services::SessionTimerService>(*time_provider_, std::chrono::milliseconds{TimerIntervalMs});
     command_handler_ = std::make_unique<app::ServerCommandHandler>(*quiz_registry_, *session_manager_);
     game_controller_ = std::make_unique<network::GameController>(*command_handler_, *timer_service_, *session_manager_);
     ioc_ = std::make_unique<net::io_context>();
@@ -263,7 +263,7 @@ TEST_F(NetworkTest, FullGameFlow) {
       {{"id", "2"},
        {"type", "submit_answer"},
        {"payload",
-        {{"session_id", sid}, {"player_id", aid}, {"selected_indices", {1}}, {"time_ms", kAnswerTimeNormal}}}});
+        {{"session_id", sid}, {"player_id", aid}, {"selected_indices", {1}}, {"time_ms", AnswerTimeNormal}}}});
   EXPECT_TRUE(aa["success"].get<bool>());
   std::cout << "  Alice answered (correct)\n";
 
@@ -275,7 +275,7 @@ TEST_F(NetworkTest, FullGameFlow) {
       {{"id", "2"},
        {"type", "submit_answer"},
        {"payload",
-        {{"session_id", sid}, {"player_id", bid}, {"selected_indices", {0}}, {"time_ms", kAnswerTimeVerySlow}}}});
+        {{"session_id", sid}, {"player_id", bid}, {"selected_indices", {0}}, {"time_ms", AnswerTimeVerySlow}}}});
   EXPECT_TRUE(ba["success"].get<bool>());
   std::cout << "  Bob answered (wrong)\n";
 
@@ -348,7 +348,7 @@ TEST_F(NetworkTest, PlayerReconnection) {
 
   // Drop connection
   p->Drop();
-  std::this_thread::sleep_for(std::chrono::milliseconds(kTimerIntervalMs));
+  std::this_thread::sleep_for(std::chrono::milliseconds(TimerIntervalMs));
   std::cout << "  Player disconnected\n";
 
   // Verify disconnected but still in session
@@ -395,7 +395,7 @@ TEST_F(NetworkTest, MaxPlayersRejection) {
 
   // Join 49 players (host = #1, so 49 more → 50 total)
   std::vector<ClientPtr> players;
-  for (int i = 0; i < kMaxExtraPlayers; ++i) {
+  for (int i = 0; i < MaxExtraPlayers; ++i) {
     auto c = MakeClient();
     auto resp = c->SendCommand({{"id", "1"}, {"type", "join"}, {"payload", {{"session_id", sid}, {"pin", pin}}}});
     ASSERT_TRUE(resp["success"].get<bool>()) << "Player " << i << " should join";
@@ -436,8 +436,7 @@ TEST_F(NetworkTest, DuplicateAnswerRejected) {
   auto a1 = p->SendCommand(
       {{"id", "2"},
        {"type", "submit_answer"},
-       {"payload",
-        {{"session_id", sid}, {"player_id", pid}, {"selected_indices", {1}}, {"time_ms", kAnswerTimeFast}}}});
+       {"payload", {{"session_id", sid}, {"player_id", pid}, {"selected_indices", {1}}, {"time_ms", AnswerTimeFast}}}});
   EXPECT_TRUE(a1["success"].get<bool>());
   std::cout << "  First answer accepted\n";
 
@@ -446,7 +445,7 @@ TEST_F(NetworkTest, DuplicateAnswerRejected) {
       {{"id", "3"},
        {"type", "submit_answer"},
        {"payload",
-        {{"session_id", sid}, {"player_id", pid}, {"selected_indices", {0}}, {"time_ms", kAnswerTimeNormal}}}});
+        {{"session_id", sid}, {"player_id", pid}, {"selected_indices", {0}}, {"time_ms", AnswerTimeNormal}}}});
   EXPECT_FALSE(a2["success"].get<bool>());
   std::cout << "  Duplicate answer correctly rejected\n";
 
@@ -505,7 +504,7 @@ TEST_F(NetworkTest, TwoParallelGames) {
         {{"id", "2"},
          {"type", "submit_answer"},
          {"payload",
-          {{"session_id", sid}, {"player_id", pid1}, {"selected_indices", {1}}, {"time_ms", kAnswerTimeMedium}}}});
+          {{"session_id", sid}, {"player_id", pid1}, {"selected_indices", {1}}, {"time_ms", AnswerTimeMedium}}}});
     EXPECT_TRUE(a1["success"].get<bool>());
     h->ReadEvent(); // Leaderboard
 
@@ -513,7 +512,7 @@ TEST_F(NetworkTest, TwoParallelGames) {
         {{"id", "2"},
          {"type", "submit_answer"},
          {"payload",
-          {{"session_id", sid}, {"player_id", pid2}, {"selected_indices", {1}}, {"time_ms", kAnswerTimeSlow}}}});
+          {{"session_id", sid}, {"player_id", pid2}, {"selected_indices", {1}}, {"time_ms", AnswerTimeSlow}}}});
     EXPECT_TRUE(a2["success"].get<bool>());
     h->ReadEvent(); // Leaderboard
     std::cout << "  [" << game_name << "] Answers submitted for Q0\n";

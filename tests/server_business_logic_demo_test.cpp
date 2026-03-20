@@ -103,7 +103,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   const auto& quiz_code = quiz_code_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_FALSE(quiz_code.empty());
 
-  auto created_opt = commands.CreateSession(quiz_code, "host1");
+  auto created_opt = commands.CreateSession(quiz_code, "host1", 0);
   ASSERT_TRUE(created_opt.has_value()) << "CreateSession";
   const auto& created = created_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_FALSE(created.session_id.empty());
@@ -117,10 +117,10 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   EXPECT_EQ(s0.current_question_index, 0u);
   EXPECT_FALSE(s0.has_question_deadline);
 
-  auto alice_id = commands.JoinAsPlayer(created.session_id, created.pin, "Alice");
-  ASSERT_TRUE(alice_id.has_value());
-  auto bob_id = commands.JoinAsPlayer(created.session_id, created.pin, "Bob");
-  ASSERT_TRUE(bob_id.has_value());
+  std::string alice_id = "alice";
+  std::string bob_id = "bob";
+  ASSERT_TRUE(commands.JoinAsPlayer(created.session_id, created.pin, alice_id, "Alice"));
+  ASSERT_TRUE(commands.JoinAsPlayer(created.session_id, created.pin, bob_id, "Bob"));
 
   auto s1_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s1_opt.has_value());
@@ -128,7 +128,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   EXPECT_EQ(s1.state, domain::SessionState::Lobby);
   EXPECT_EQ(s1.players.size(), 3u);
 
-  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, "000000", "Eve").has_value()) << "wrong PIN must be rejected";
+  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, "000000", "eve", "Eve")) << "wrong PIN must be rejected";
 
   EXPECT_TRUE(commands.StartGame(created.session_id));
 
@@ -142,18 +142,18 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   domain::PlayerAnswer a0;
   a0.selected_indices = {1};
   a0.time_since_question_start_ms = std::chrono::milliseconds(KAliceQ1TimeMs);
-  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, *alice_id, a0));
+  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, alice_id, a0));
 
   domain::PlayerAnswer b0;
   b0.selected_indices = {1};
   b0.time_since_question_start_ms = std::chrono::milliseconds(KBobQ1TimeMs);
-  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, *bob_id, b0));
+  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, bob_id, b0));
 
   auto s3_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s3_opt.has_value());
   const auto& s3 = s3_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
-  int alice_q0 = ScoreOf(s3, *alice_id);
-  int bob_q0 = ScoreOf(s3, *bob_id);
+  int alice_q0 = ScoreOf(s3, alice_id);
+  int bob_q0 = ScoreOf(s3, bob_id);
   EXPECT_GT(alice_q0, 0);
   EXPECT_GT(bob_q0, 0);
   EXPECT_GT(alice_q0, bob_q0) << "faster correct answer gets more points";
@@ -161,7 +161,7 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   domain::PlayerAnswer a0_dup;
   a0_dup.selected_indices = {0};
   a0_dup.time_since_question_start_ms = std::chrono::milliseconds(KDupAnswerTimeMs);
-  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, *alice_id, a0_dup))
+  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, alice_id, a0_dup))
       << "second answer on same question must be rejected";
 
   EXPECT_TRUE(commands.NextQuestion(created.session_id));
@@ -177,18 +177,18 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   domain::PlayerAnswer a1;
   a1.selected_indices = {1, 2};
   a1.time_since_question_start_ms = std::chrono::milliseconds(KAliceQ2TimeMs);
-  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, *alice_id, a1));
+  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, alice_id, a1));
 
   domain::PlayerAnswer b1;
   b1.selected_indices = {0, 2};
   b1.time_since_question_start_ms = std::chrono::milliseconds(KBobQ2TimeMs);
-  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, *bob_id, b1));
+  EXPECT_TRUE(commands.SubmitAnswer(created.session_id, bob_id, b1));
 
   auto s5_opt = session_manager.GetSessionById(created.session_id);
   ASSERT_TRUE(s5_opt.has_value());
   const auto& s5 = s5_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
-  EXPECT_EQ(ScoreOf(s5, *alice_id), alice_q0) << "alice wrong answer, no new points";
-  EXPECT_GT(ScoreOf(s5, *bob_id), bob_q0) << "bob correct, gains points";
+  EXPECT_EQ(ScoreOf(s5, alice_id), alice_q0) << "alice wrong answer, no new points";
+  EXPECT_GT(ScoreOf(s5, bob_id), bob_q0) << "bob correct, gains points";
 
   EXPECT_TRUE(commands.NextQuestion(created.session_id));
 
@@ -197,15 +197,15 @@ TEST(ServerBusinessLogicDemo, FullScenario) {
   const auto& s6 = s6_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   EXPECT_EQ(s6.state, domain::SessionState::Finished);
   EXPECT_EQ(s6.current_question_index, 2u);
-  EXPECT_GT(ScoreOf(s6, *bob_id), ScoreOf(s6, *alice_id)) << "bob wins";
+  EXPECT_GT(ScoreOf(s6, bob_id), ScoreOf(s6, alice_id)) << "bob wins";
 
-  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, created.pin, "Late").has_value())
+  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, created.pin, "late", "Late"))
       << "join in Finished must be rejected";
 
   domain::PlayerAnswer too_late;
   too_late.selected_indices = {0};
   too_late.time_since_question_start_ms = std::chrono::milliseconds(0);
-  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, *bob_id, too_late))
+  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, bob_id, too_late))
       << "submit after game finished must be rejected";
 }
 
@@ -237,7 +237,7 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
   const auto& quiz_code = quiz_code_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   std::cout << "\n[1] Quiz created: code=" << quiz_code << "\n";
 
-  auto created_opt = commands.CreateSession(quiz_code, "host1");
+  auto created_opt = commands.CreateSession(quiz_code, "host1", 0);
   ASSERT_TRUE(created_opt.has_value());
   const auto& created = created_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
   std::cout << "[2] Session: id=" << created.session_id << " pin=" << created.pin << "\n";
@@ -248,18 +248,18 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
     PrintSession(s0, "After creation (host only)");
   }
 
-  auto alice_id = commands.JoinAsPlayer(created.session_id, created.pin, "Alice");
-  ASSERT_TRUE(alice_id.has_value());
-  auto bob_id = commands.JoinAsPlayer(created.session_id, created.pin, "Bob");
-  ASSERT_TRUE(bob_id.has_value());
-  std::cout << "[3] Alice (" << *alice_id << "), Bob (" << *bob_id << ") joined\n";
+  std::string alice_id = "alice_v";
+  std::string bob_id = "bob_v";
+  ASSERT_TRUE(commands.JoinAsPlayer(created.session_id, created.pin, alice_id, "Alice"));
+  ASSERT_TRUE(commands.JoinAsPlayer(created.session_id, created.pin, bob_id, "Bob"));
+  std::cout << "[3] Alice (" << alice_id << "), Bob (" << bob_id << ") joined\n";
   auto s1_opt = session_manager.GetSessionById(created.session_id);
   if (s1_opt) {
     const auto& s1 = *s1_opt;
     PrintSession(s1, "Lobby: host + Alice + Bob");
   }
 
-  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, "000000", "Eve").has_value());
+  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, "000000", "eve_v", "Eve"));
   std::cout << "[4] Wrong PIN rejected\n";
 
   ASSERT_TRUE(commands.StartGame(created.session_id));
@@ -274,8 +274,8 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
                           .time_since_question_start_ms = std::chrono::milliseconds(KAliceQ1TimeMs)};
   domain::PlayerAnswer b0{.selected_indices = {1},
                           .time_since_question_start_ms = std::chrono::milliseconds(KBobQ1TimeMs)};
-  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, *alice_id, a0));
-  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, *bob_id, b0));
+  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, alice_id, a0));
+  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, bob_id, b0));
   std::cout << "[6] Answers on question 0\n";
   auto s3_opt = session_manager.GetSessionById(created.session_id);
   if (s3_opt) {
@@ -285,7 +285,7 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
 
   domain::PlayerAnswer a0_dup{.selected_indices = {0},
                               .time_since_question_start_ms = std::chrono::milliseconds(KDupAnswerTimeMs)};
-  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, *alice_id, a0_dup));
+  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, alice_id, a0_dup));
   std::cout << "[7] Second answer rejected\n";
 
   ASSERT_TRUE(commands.NextQuestion(created.session_id));
@@ -300,8 +300,8 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
                           .time_since_question_start_ms = std::chrono::milliseconds(KAliceQ2TimeMs)};
   domain::PlayerAnswer b1{.selected_indices = {0, 2},
                           .time_since_question_start_ms = std::chrono::milliseconds(KBobQ2TimeMs)};
-  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, *alice_id, a1));
-  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, *bob_id, b1));
+  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, alice_id, a1));
+  ASSERT_TRUE(commands.SubmitAnswer(created.session_id, bob_id, b1));
   std::cout << "[9] Answers on question 1\n";
   auto s5_opt = session_manager.GetSessionById(created.session_id);
   if (s5_opt) {
@@ -317,9 +317,9 @@ TEST(ServerBusinessLogicDemo, VerboseScenario) {
     PrintSession(s6, "Final: Finished");
   }
 
-  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, created.pin, "Late").has_value());
+  EXPECT_FALSE(commands.JoinAsPlayer(created.session_id, created.pin, "late_v", "Late"));
   domain::PlayerAnswer too_late{.selected_indices = {0}, .time_since_question_start_ms = std::chrono::milliseconds(0)};
-  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, *bob_id, too_late));
+  EXPECT_FALSE(commands.SubmitAnswer(created.session_id, bob_id, too_late));
   std::cout << "[11] Join/Submit after finish rejected\n";
 }
 

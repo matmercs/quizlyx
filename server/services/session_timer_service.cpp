@@ -12,10 +12,17 @@ void SessionTimerService::SetDeadline(const std::string& session_id, std::chrono
   deadlines_[session_id] = deadline;
 }
 
+void SessionTimerService::SetAutoAdvanceDeadline(const std::string& session_id,
+                                                 std::chrono::steady_clock::time_point deadline) {
+  std::lock_guard lock(mutex_);
+  auto_advance_deadlines_[session_id] = deadline;
+}
+
 void SessionTimerService::ClearDeadline(const std::string& session_id) {
   std::lock_guard lock(mutex_);
   deadlines_.erase(session_id);
   last_updates_.erase(session_id);
+  auto_advance_deadlines_.erase(session_id);
 }
 
 std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
@@ -37,6 +44,7 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
                 ::quizlyx::server::events::GameEvent{
                     ::quizlyx::server::events::QuestionTimeout{},
                 },
+            .timer_type = TimerType::QuestionDeadline,
         });
         expired_sessions.push_back(session_id);
         continue;
@@ -52,6 +60,7 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
                 ::quizlyx::server::events::GameEvent{
                     ::quizlyx::server::events::TimerUpdate{remaining},
                 },
+            .timer_type = TimerType::QuestionDeadline,
         });
         last_updates_[session_id] = now;
       }
@@ -60,6 +69,26 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
     for (const auto& id : expired_sessions) {
       deadlines_.erase(id);
       last_updates_.erase(id);
+    }
+
+    // Process auto-advance deadlines
+    std::vector<std::string> expired_auto_advance;
+    for (const auto& [session_id, deadline] : auto_advance_deadlines_) {
+      if (now >= deadline) {
+        result.push_back(TimerEvent{
+            .session_id = session_id,
+            .event =
+                ::quizlyx::server::events::GameEvent{
+                    ::quizlyx::server::events::QuestionTimeout{},
+                },
+            .timer_type = TimerType::AutoAdvance,
+        });
+        expired_auto_advance.push_back(session_id);
+      }
+    }
+
+    for (const auto& id : expired_auto_advance) {
+      auto_advance_deadlines_.erase(id);
     }
   }
 

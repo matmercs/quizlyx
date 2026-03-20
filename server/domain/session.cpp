@@ -25,6 +25,8 @@ bool CanJoin(const Session& s) {
 bool AddPlayer(Session& s, const Player& p) {
   if (s.state != SessionState::Lobby)
     return false;
+  if (s.players.size() >= kMaxPlayersPerSession)
+    return false;
   if (FindPlayer(s, p.id) != nullptr)
     return false;
   s.players.push_back(p);
@@ -77,6 +79,24 @@ bool AdvanceToNextQuestion(Session& s, size_t total_questions) {
 void RemovePlayer(Session& s, const std::string& player_id) {
   auto [first, last] = std::ranges::remove_if(s.players, [&player_id](const Player& p) { return p.id == player_id; });
   s.players.erase(first, last);
+}
+
+bool DisconnectPlayer(Session& s, const std::string& player_id, std::chrono::steady_clock::time_point now) {
+  Player* p = FindPlayer(s, player_id);
+  if (p == nullptr)
+    return false;
+  p->connected = false;
+  p->disconnected_at = now;
+  return true;
+}
+
+bool ReconnectPlayer(Session& s, const std::string& player_id) {
+  Player* p = FindPlayer(s, player_id);
+  if (p == nullptr)
+    return false;
+  p->connected = true;
+  p->disconnected_at = std::nullopt;
+  return true;
 }
 
 } // namespace quizlyx::server::domain

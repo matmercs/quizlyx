@@ -12,7 +12,7 @@
 
 namespace quizlyx::server::services {
 
-enum class TimerType { QuestionDeadline, AutoAdvance };
+enum class TimerType { QuestionDeadline, RevealDelay, AutoAdvance };
 
 class SessionTimerService {
 public:
@@ -25,6 +25,7 @@ public:
   SessionTimerService(interfaces::ITimeProvider& time_provider, std::chrono::milliseconds update_interval);
 
   void SetDeadline(const std::string& session_id, std::chrono::steady_clock::time_point deadline);
+  void SetRevealDeadline(const std::string& session_id, std::chrono::steady_clock::time_point deadline);
   void SetAutoAdvanceDeadline(const std::string& session_id, std::chrono::steady_clock::time_point deadline);
   void ClearDeadline(const std::string& session_id);
 
@@ -37,6 +38,7 @@ private:
   std::mutex mutex_;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> deadlines_;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> last_updates_;
+  std::unordered_map<std::string, std::chrono::steady_clock::time_point> reveal_deadlines_;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> auto_advance_deadlines_;
 };
 

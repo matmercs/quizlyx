@@ -84,15 +84,28 @@ int main(int argc, char** argv) {
 
       auto timer_events = timer_service.Tick();
       for (const auto& te : timer_events) {
-        broadcast_sink.Broadcast(te.session_id, te.event);
-
         if (te.timer_type == services::TimerType::QuestionDeadline) {
-          if (std::holds_alternative<events::QuestionTimeout>(te.event)) {
-            auto session = session_manager.GetSessionById(te.session_id);
-            if (session && session->auto_advance_delay_ms > 0) {
-              auto delay = std::chrono::milliseconds(session->auto_advance_delay_ms);
-              timer_service.SetAutoAdvanceDeadline(te.session_id, time_provider.Now() + delay);
+          if (std::holds_alternative<events::TimerUpdate>(te.event)) {
+            broadcast_sink.Broadcast(te.session_id, te.event);
+          } else if (std::holds_alternative<events::QuestionTimeout>(te.event)) {
+            broadcast_sink.Broadcast(te.session_id, te.event);
+            auto round_result = game_controller.CompleteQuestion(te.session_id);
+            if (!round_result)
+              continue;
+            broadcast_sink.Broadcast(te.session_id, *round_result);
+            if (const auto* reveal = std::get_if<events::AnswerReveal>(&*round_result); reveal != nullptr) {
+              timer_service.SetRevealDeadline(te.session_id, time_provider.Now() + reveal->reveal_duration_ms);
             }
+          }
+        } else if (te.timer_type == services::TimerType::RevealDelay) {
+          auto post_reveal_event = game_controller.FinishReveal(te.session_id);
+          if (!post_reveal_event)
+            continue;
+          broadcast_sink.Broadcast(te.session_id, *post_reveal_event);
+          if (const auto* leaderboard = std::get_if<events::Leaderboard>(&*post_reveal_event);
+              leaderboard != nullptr && leaderboard->next_round_delay_ms.has_value()) {
+            timer_service.SetAutoAdvanceDeadline(te.session_id,
+                                                 time_provider.Now() + *leaderboard->next_round_delay_ms);
           }
         } else if (te.timer_type == services::TimerType::AutoAdvance) {
           game_controller.NextQuestion(te.session_id);

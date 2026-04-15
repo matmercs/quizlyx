@@ -19,7 +19,7 @@ struct ClientMessage {
 
 std::optional<ClientMessage> ParseClientMessage(const std::string& text);
 std::string SerializeResponse(const std::string& request_id, bool success, const nlohmann::json& payload);
-std::string SerializeGameEvent(const events::GameEvent& event);
+std::string SerializeGameEvent(const events::GameEvent& event, const std::string& viewer_player_id = {});
 
 domain::Quiz DeserializeQuiz(const nlohmann::json& j);
 domain::PlayerAnswer DeserializePlayerAnswer(const nlohmann::json& j);

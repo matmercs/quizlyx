@@ -26,6 +26,9 @@ public:
 
   void Start();
   void Send(std::string message);
+  const std::string& playerId() const {
+    return player_id_;
+  }
 
 private:
   void DoAccept();

@@ -8,22 +8,45 @@ namespace quizlyx::server::services {
 
 namespace {
 
+constexpr auto kAnswerRevealDuration = std::chrono::milliseconds{5000};
+
 ::quizlyx::server::events::Leaderboard BuildLeaderboard(const domain::Session& session) {
   ::quizlyx::server::events::Leaderboard leaderboard;
   leaderboard.entries.reserve(session.players.size());
   for (const auto& player : session.players) {
+    if (!player.is_competing)
+      continue;
     leaderboard.entries.push_back(events::LeaderboardEntry{.player_id = player.id, .score = player.score});
   }
 
-  std::ranges::sort(leaderboard.entries,
-                    [](const ::quizlyx::server::events::LeaderboardEntry& lhs,
-                       const ::quizlyx::server::events::LeaderboardEntry& rhs) {
-                      if (lhs.score != rhs.score)
-                        return lhs.score > rhs.score;
-                      return lhs.player_id < rhs.player_id;
-                    });
+  std::stable_sort(leaderboard.entries.begin(),
+                   leaderboard.entries.end(),
+                   [](const ::quizlyx::server::events::LeaderboardEntry& lhs,
+                      const ::quizlyx::server::events::LeaderboardEntry& rhs) { return lhs.score > rhs.score; });
 
   return leaderboard;
+}
+
+::quizlyx::server::events::AnswerReveal BuildAnswerReveal(const domain::Session& session,
+                                                          const domain::Question& question) {
+  ::quizlyx::server::events::AnswerReveal reveal;
+  reveal.correct_indices = question.correct_indices;
+  reveal.option_pick_counts.assign(static_cast<int>(question.options.size()), 0);
+  reveal.reveal_duration_ms = kAnswerRevealDuration;
+
+  for (const auto& player : session.players) {
+    if (!player.is_competing)
+      continue;
+
+    reveal.selections_by_player[player.id] = player.current_selected_indices;
+    for (const auto selected_index : player.current_selected_indices) {
+      if (selected_index < question.options.size()) {
+        ++reveal.option_pick_counts[static_cast<int>(selected_index)];
+      }
+    }
+  }
+
+  return reveal;
 }
 
 } // namespace
@@ -41,8 +64,35 @@ SessionManager::SessionEntry* SessionManager::FindEntry(const std::string& sessi
   return it->second.get();
 }
 
+SessionManager::SessionEntry* SessionManager::FindEntryByPin(const std::string& pin) const {
+  for (const auto& [_, entry] : sessions_) {
+    if (entry->session.pin == pin)
+      return entry.get();
+  }
+  return nullptr;
+}
+
+std::string SessionManager::ResolveDisplayName(const domain::Session& session,
+                                               const std::string& requested_display_name) {
+  std::string base_name = requested_display_name.empty() ? "Player" : requested_display_name;
+  auto is_taken = [&session](const std::string& candidate) {
+    return std::ranges::any_of(session.players, [&](const domain::Player& player) { return player.name == candidate; });
+  };
+
+  if (!is_taken(base_name))
+    return base_name;
+
+  for (size_t suffix = 2;; ++suffix) {
+    const auto candidate = base_name + " (" + std::to_string(suffix) + ")";
+    if (!is_taken(candidate))
+      return candidate;
+  }
+}
+
 std::optional<SessionManager::SessionInfo> SessionManager::CreateSession(const std::string& quiz_code,
-                                                                         const std::string& host_id,
+                                                                         const std::string& host_player_id,
+                                                                         const std::string& host_display_name,
+                                                                         bool host_is_spectator,
                                                                          int auto_advance_delay_ms) {
   auto quiz = quiz_registry_.Get(quiz_code);
   if (!quiz)
@@ -55,25 +105,38 @@ std::optional<SessionManager::SessionInfo> SessionManager::CreateSession(const s
 
     info.session_id = GenerateSessionId();
     info.pin = GeneratePin();
+    info.player_id = host_player_id;
+    info.display_name = host_display_name.empty() ? std::string{"Host"} : host_display_name;
+    info.is_competing = !host_is_spectator;
 
     auto entry = std::make_unique<SessionEntry>();
     entry->session.id = info.session_id;
     entry->session.pin = info.pin;
     entry->session.quiz_code = quiz_code;
-    entry->session.host_id = host_id;
+    entry->session.host_id = host_player_id;
     entry->session.state = domain::SessionState::Lobby;
     entry->session.current_question_index = 0;
     entry->session.has_question_deadline = false;
     entry->session.auto_advance_delay_ms = auto_advance_delay_ms;
 
-    domain::Player host{
-        .id = host_id, .name = host_id, .role = domain::Role::Host, .score = 0, .answered_current_question = false};
+    domain::Player host{.id = host_player_id,
+                        .name = info.display_name,
+                        .role = domain::Role::Host,
+                        .score = 0,
+                        .answered_current_question = false,
+                        .is_competing = info.is_competing,
+                        .current_selected_indices = {}};
     entry->session.players.push_back(std::move(host));
 
     sessions_.emplace(info.session_id, std::move(entry));
   }
 
-  ::quizlyx::server::events::PlayerJoined joined_event{.player_id = host_id, .role = domain::Role::Host};
+  ::quizlyx::server::events::PlayerJoined joined_event{
+      .player_id = host_player_id,
+      .display_name = info.display_name,
+      .role = domain::Role::Host,
+      .is_competing = info.is_competing,
+  };
   broadcast_sink_.Broadcast(info.session_id, joined_event);
 
   return info;
@@ -91,38 +154,50 @@ std::optional<domain::Session> SessionManager::GetSessionById(const std::string&
   return entry->session;
 }
 
-bool SessionManager::JoinAsPlayer(const std::string& session_id,
-                                  const std::string& pin,
-                                  const std::string& player_id,
-                                  const std::string& display_name) {
+std::optional<SessionManager::JoinInfo> SessionManager::JoinByPin(const std::string& pin,
+                                                                  const std::string& player_id,
+                                                                  const std::string& display_name) {
   SessionEntry* entry = nullptr;
+  JoinInfo result;
   {
     std::lock_guard lock(global_mutex_);
-    entry = FindEntry(session_id);
+    entry = FindEntryByPin(pin);
     if (entry == nullptr)
-      return false;
+      return std::nullopt;
   }
 
   {
     std::lock_guard session_lock(entry->mutex);
 
-    if (entry->session.pin != pin)
-      return false;
     if (!domain::CanJoin(entry->session))
-      return false;
+      return std::nullopt;
+
+    const auto resolved_name = ResolveDisplayName(entry->session, display_name);
 
     domain::Player player{.id = player_id,
-                          .name = display_name,
+                          .name = resolved_name,
                           .role = domain::Role::Player,
                           .score = 0,
-                          .answered_current_question = false};
+                          .answered_current_question = false,
+                          .is_competing = true,
+                          .current_selected_indices = {}};
     if (!domain::AddPlayer(entry->session, player))
-      return false;
+      return std::nullopt;
+
+    result.session_id = entry->session.id;
+    result.player_id = player_id;
+    result.display_name = resolved_name;
+    result.is_competing = true;
   }
 
-  ::quizlyx::server::events::PlayerJoined joined_event{.player_id = player_id, .role = domain::Role::Player};
-  broadcast_sink_.Broadcast(session_id, joined_event);
-  return true;
+  ::quizlyx::server::events::PlayerJoined joined_event{
+      .player_id = player_id,
+      .display_name = result.display_name,
+      .role = domain::Role::Player,
+      .is_competing = result.is_competing,
+  };
+  broadcast_sink_.Broadcast(result.session_id, joined_event);
+  return result;
 }
 
 bool SessionManager::Leave(const std::string& session_id, const std::string& player_id) {
@@ -163,6 +238,7 @@ bool SessionManager::StartGame(const std::string& session_id) {
 
     if (!domain::StartGame(entry->session))
       return false;
+    entry->pending_post_reveal_event.reset();
 
     const auto& question = quiz->questions.at(entry->session.current_question_index);
     auto now = time_provider_.Now();
@@ -171,8 +247,12 @@ bool SessionManager::StartGame(const std::string& session_id) {
 
     ::quizlyx::server::events::QuestionStarted qs;
     qs.question_index = entry->session.current_question_index;
+    qs.total_questions = quiz->questions.size();
     qs.started_at = now;
     qs.duration_ms = question.time_limit_ms;
+    qs.text = question.text;
+    qs.answer_type = question.answer_type;
+    qs.options = question.options;
 
     event = qs;
   }
@@ -204,6 +284,7 @@ bool SessionManager::NextQuestion(const std::string& session_id) {
     const size_t total_questions = quiz->questions.size();
     if (!domain::AdvanceToNextQuestion(entry->session, total_questions))
       return false;
+    entry->pending_post_reveal_event.reset();
 
     if (entry->session.state == domain::SessionState::Finished) {
       ::quizlyx::server::events::GameFinished finished;
@@ -217,8 +298,12 @@ bool SessionManager::NextQuestion(const std::string& session_id) {
 
       ::quizlyx::server::events::QuestionStarted qs;
       qs.question_index = entry->session.current_question_index;
+      qs.total_questions = quiz->questions.size();
       qs.started_at = now;
       qs.duration_ms = question.time_limit_ms;
+      qs.text = question.text;
+      qs.answer_type = question.answer_type;
+      qs.options = question.options;
       event = qs;
     }
   }
@@ -228,6 +313,72 @@ bool SessionManager::NextQuestion(const std::string& session_id) {
   }
 
   return true;
+}
+
+std::optional<events::GameEvent> SessionManager::CompleteQuestion(const std::string& session_id) {
+  SessionEntry* entry = nullptr;
+  {
+    std::lock_guard lock(global_mutex_);
+    entry = FindEntry(session_id);
+    if (entry == nullptr)
+      return std::nullopt;
+  }
+
+  std::optional<events::GameEvent> event;
+  {
+    std::lock_guard session_lock(entry->mutex);
+
+    auto quiz = quiz_registry_.Get(entry->session.quiz_code);
+    if (!quiz || quiz->questions.empty())
+      return std::nullopt;
+    if (entry->session.state != domain::SessionState::Running)
+      return std::nullopt;
+
+    entry->session.has_question_deadline = false;
+
+    const bool is_final_question = entry->session.current_question_index + 1 >= quiz->questions.size();
+    if (is_final_question) {
+      events::GameFinished finished;
+      finished.final_leaderboard = BuildLeaderboard(entry->session).entries;
+      entry->pending_post_reveal_event = finished;
+    } else {
+      auto leaderboard = BuildLeaderboard(entry->session);
+      if (entry->session.auto_advance_delay_ms > 0) {
+        leaderboard.next_round_delay_ms = std::chrono::milliseconds(entry->session.auto_advance_delay_ms);
+      }
+      entry->pending_post_reveal_event = leaderboard;
+    }
+
+    const auto& question = quiz->questions.at(entry->session.current_question_index);
+    event = BuildAnswerReveal(entry->session, question);
+  }
+
+  return event;
+}
+
+std::optional<events::GameEvent> SessionManager::FinishReveal(const std::string& session_id) {
+  SessionEntry* entry = nullptr;
+  {
+    std::lock_guard lock(global_mutex_);
+    entry = FindEntry(session_id);
+    if (entry == nullptr)
+      return std::nullopt;
+  }
+
+  std::optional<events::GameEvent> event;
+  {
+    std::lock_guard session_lock(entry->mutex);
+    if (!entry->pending_post_reveal_event.has_value())
+      return std::nullopt;
+
+    if (std::holds_alternative<events::GameFinished>(*entry->pending_post_reveal_event)) {
+      entry->session.state = domain::SessionState::Finished;
+    }
+    event = entry->pending_post_reveal_event;
+    entry->pending_post_reveal_event.reset();
+  }
+
+  return event;
 }
 
 bool SessionManager::SubmitAnswer(const std::string& session_id,
@@ -241,7 +392,6 @@ bool SessionManager::SubmitAnswer(const std::string& session_id,
       return false;
   }
 
-  std::optional<::quizlyx::server::events::GameEvent> event;
   {
     std::lock_guard session_lock(entry->mutex);
 
@@ -258,7 +408,7 @@ bool SessionManager::SubmitAnswer(const std::string& session_id,
     const auto& question = quiz->questions.at(entry->session.current_question_index);
     const int points = CalculatePoints(question, answer);
 
-    if (!domain::RecordAnswer(entry->session, player_id))
+    if (!domain::RecordAnswer(entry->session, player_id, answer.selected_indices))
       return false;
 
     auto player_it = std::ranges::find_if(entry->session.players,
@@ -267,12 +417,6 @@ bool SessionManager::SubmitAnswer(const std::string& session_id,
       return false;
 
     player_it->score += points;
-
-    event = BuildLeaderboard(entry->session);
-  }
-
-  if (event) {
-    broadcast_sink_.Broadcast(session_id, *event);
   }
 
   return true;

@@ -14,16 +14,17 @@ public:
   std::optional<std::string> CreateQuiz(domain::Quiz quiz) override;
 
   std::optional<interfaces::SessionCreated> CreateSession(const std::string& quiz_code,
-                                                          const std::string& host_id,
+                                                          const std::string& host_player_id,
+                                                          const std::string& host_display_name,
+                                                          bool host_is_spectator,
                                                           int auto_advance_delay_ms) override;
 
   bool StartGame(const std::string& session_id) override;
   bool NextQuestion(const std::string& session_id) override;
 
-  bool JoinAsPlayer(const std::string& session_id,
-                    const std::string& pin,
-                    const std::string& player_id,
-                    const std::string& display_name) override;
+  std::optional<interfaces::JoinedSession> JoinAsPlayer(const std::string& pin,
+                                                        const std::string& player_id,
+                                                        const std::string& display_name) override;
   bool LeaveSession(const std::string& session_id, const std::string& player_id) override;
 
   bool SubmitAnswer(const std::string& session_id,

@@ -21,19 +21,21 @@ public:
 
   std::optional<std::string> CreateQuiz(domain::Quiz quiz);
   std::optional<interfaces::SessionCreated> CreateSession(const std::string& quiz_code,
-                                                          const std::string& host_id,
+                                                          const std::string& host_display_name,
+                                                          bool host_is_spectator,
                                                           int auto_advance_delay_ms);
   bool StartGame(const std::string& session_id);
   bool NextQuestion(const std::string& session_id);
+  std::optional<events::GameEvent> CompleteQuestion(const std::string& session_id);
+  std::optional<events::GameEvent> FinishReveal(const std::string& session_id);
 
-  std::optional<std::string> JoinAsPlayer(const std::string& session_id,
-                                          const std::string& pin,
-                                          const std::string& display_name);
+  std::optional<interfaces::JoinedSession> JoinAsPlayer(const std::string& pin, const std::string& display_name);
   bool LeaveSession(const std::string& session_id, const std::string& player_id);
   bool SubmitAnswer(const std::string& session_id, const std::string& player_id, const domain::PlayerAnswer& answer);
 
   bool Disconnect(const std::string& session_id, const std::string& player_id);
   bool Reconnect(const std::string& session_id, const std::string& player_id);
+  std::optional<domain::Session> GetSessionById(const std::string& session_id) const;
 
 private:
   std::string GeneratePlayerId();

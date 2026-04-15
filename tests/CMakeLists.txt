@@ -1,14 +1,26 @@
 include(FetchContent)
 
-FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG v1.14.0
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+if (NOT BUILD_TESTING)
+        return()
+endif ()
 
-FetchContent_MakeAvailable(googletest)
+find_package(GTest 1.14 QUIET CONFIG)
+
+if (GTest_FOUND)
+        message(STATUS "GTest found in the system.")
+else ()
+        message(STATUS "GTest not found. Downloading release archive...")
+        set(FETCHCONTENT_QUIET OFF)
+        FetchContent_Declare(
+                googletest
+                URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
+                DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        )
+        # For Windows: Prevent overriding the parent project's compiler/linker settings
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+        FetchContent_MakeAvailable(googletest)
+endif ()
 
 enable_testing()
 

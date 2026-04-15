@@ -12,6 +12,12 @@ void SessionTimerService::SetDeadline(const std::string& session_id, std::chrono
   deadlines_[session_id] = deadline;
 }
 
+void SessionTimerService::SetRevealDeadline(const std::string& session_id,
+                                            std::chrono::steady_clock::time_point deadline) {
+  std::lock_guard lock(mutex_);
+  reveal_deadlines_[session_id] = deadline;
+}
+
 void SessionTimerService::SetAutoAdvanceDeadline(const std::string& session_id,
                                                  std::chrono::steady_clock::time_point deadline) {
   std::lock_guard lock(mutex_);
@@ -22,6 +28,7 @@ void SessionTimerService::ClearDeadline(const std::string& session_id) {
   std::lock_guard lock(mutex_);
   deadlines_.erase(session_id);
   last_updates_.erase(session_id);
+  reveal_deadlines_.erase(session_id);
   auto_advance_deadlines_.erase(session_id);
 }
 
@@ -69,6 +76,25 @@ std::vector<SessionTimerService::TimerEvent> SessionTimerService::Tick() {
     for (const auto& id : expired_sessions) {
       deadlines_.erase(id);
       last_updates_.erase(id);
+    }
+
+    std::vector<std::string> expired_reveals;
+    for (const auto& [session_id, deadline] : reveal_deadlines_) {
+      if (now >= deadline) {
+        result.push_back(TimerEvent{
+            .session_id = session_id,
+            .event =
+                ::quizlyx::server::events::GameEvent{
+                    ::quizlyx::server::events::QuestionTimeout{},
+                },
+            .timer_type = TimerType::RevealDelay,
+        });
+        expired_reveals.push_back(session_id);
+      }
+    }
+
+    for (const auto& id : expired_reveals) {
+      reveal_deadlines_.erase(id);
     }
 
     // Process auto-advance deadlines

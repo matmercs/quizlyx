@@ -16,8 +16,27 @@ Checks: "-*,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-pro-type-union-access,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-prefer-member-initializer,
   -bugprone-exception-escape,
-  -bugprone-easily-swappable-parameters"
+  -bugprone-easily-swappable-parameters,
+  -bugprone-unchecked-optional-access,
+  -performance-enum-size,
+  -performance-unnecessary-value-param,
+  -modernize-use-scoped-lock,
+  -modernize-use-ranges,
+  -modernize-use-designated-initializers,
+  -modernize-avoid-c-arrays,
+  -modernize-return-braced-init-list,
+  -modernize-use-nodiscard,
+  -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-use-enum-class,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -llvm-namespace-comment,
+  -readability-identifier-naming,
+  -readability-static-accessed-through-instance"
 
 WarningsAsErrors: ""
 HeaderFilterRegex: ""

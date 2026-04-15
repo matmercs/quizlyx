@@ -3,15 +3,27 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "domain/answer.hpp"
 #include "domain/quiz.hpp"
+#include "domain/types.hpp"
 
 namespace quizlyx::server::interfaces {
 
 struct SessionCreated {
   std::string session_id;
   std::string pin;
+  std::string player_id;
+  std::string display_name;
+  bool is_competing = true;
+};
+
+struct JoinedSession {
+  std::string session_id;
+  std::string player_id;
+  std::string display_name;
+  bool is_competing = true;
 };
 
 class ICommandHandler {
@@ -21,16 +33,17 @@ public:
   virtual std::optional<std::string> CreateQuiz(domain::Quiz quiz) = 0;
 
   virtual std::optional<SessionCreated> CreateSession(const std::string& quiz_code,
-                                                      const std::string& host_id,
+                                                      const std::string& host_player_id,
+                                                      const std::string& host_display_name,
+                                                      bool host_is_spectator,
                                                       int auto_advance_delay_ms) = 0;
 
   virtual bool StartGame(const std::string& session_id) = 0;
   virtual bool NextQuestion(const std::string& session_id) = 0;
 
-  virtual bool JoinAsPlayer(const std::string& session_id,
-                            const std::string& pin,
-                            const std::string& player_id,
-                            const std::string& display_name) = 0;
+  virtual std::optional<JoinedSession> JoinAsPlayer(const std::string& pin,
+                                                    const std::string& player_id,
+                                                    const std::string& display_name) = 0;
   virtual bool LeaveSession(const std::string& session_id, const std::string& player_id) = 0;
 
   virtual bool SubmitAnswer(const std::string& session_id,

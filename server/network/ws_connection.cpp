@@ -6,6 +6,24 @@
 
 namespace quizlyx::server::network {
 
+namespace {
+
+nlohmann::json SerializePlayers(const domain::Session& session) {
+  nlohmann::json players = nlohmann::json::array();
+  for (const auto& player : session.players) {
+    players.push_back({
+        {"player_id", player.id},
+        {"display_name", player.name},
+        {"role", player.role == domain::Role::Host ? "host" : "player"},
+        {"is_competing", player.is_competing},
+        {"connected", player.connected},
+    });
+  }
+  return players;
+}
+
+} // namespace
+
 WsConnection::WsConnection(tcp::socket&& socket, GameController& controller, WsConnectionManager& manager) :
     ws_(std::move(socket)), controller_(controller), manager_(manager) {
   ws_.binary(false);
@@ -78,27 +96,48 @@ void WsConnection::HandleMessage(const std::string& text) {
       }
     } else if (type == "create_session") {
       auto quiz_code = payload.at("quiz_code").get<std::string>();
-      auto host_id = payload.at("host_id").get<std::string>();
+      auto host_name = payload.value("host_name", "Host");
+      const bool host_is_spectator = payload.value("host_is_spectator", false);
       int auto_advance = payload.value("auto_advance_delay_ms", 0);
-      auto result = controller_.CreateSession(quiz_code, host_id, auto_advance);
+      auto result = controller_.CreateSession(quiz_code, host_name, host_is_spectator, auto_advance);
       if (result) {
         session_id_ = result->session_id;
-        player_id_ = host_id;
+        player_id_ = result->player_id;
         manager_.Register(session_id_, player_id_, shared_from_this());
-        Send(SerializeResponse(id, true, {{"session_id", result->session_id}, {"pin", result->pin}}));
+        auto session = controller_.GetSessionById(session_id_);
+        nlohmann::json response = {
+            {"session_id", result->session_id},
+            {"pin", result->pin},
+            {"player_id", result->player_id},
+            {"display_name", result->display_name},
+            {"is_competing", result->is_competing},
+        };
+        if (session) {
+          response["players"] = SerializePlayers(*session);
+        }
+        Send(SerializeResponse(id, true, response));
       } else {
         Send(SerializeResponse(id, false, {{"error", "failed to create session"}}));
       }
     } else if (type == "join") {
-      auto sid = payload.at("session_id").get<std::string>();
       auto pin = payload.at("pin").get<std::string>();
       auto name = payload.value("name", "");
-      auto player_id = controller_.JoinAsPlayer(sid, pin, name);
-      if (player_id) {
-        session_id_ = sid;
-        player_id_ = *player_id;
+      auto result = controller_.JoinAsPlayer(pin, name);
+      if (result) {
+        session_id_ = result->session_id;
+        player_id_ = result->player_id;
         manager_.Register(session_id_, player_id_, shared_from_this());
-        Send(SerializeResponse(id, true, {{"player_id", *player_id}}));
+        auto session = controller_.GetSessionById(session_id_);
+        nlohmann::json response = {
+            {"session_id", result->session_id},
+            {"player_id", result->player_id},
+            {"display_name", result->display_name},
+            {"is_competing", result->is_competing},
+        };
+        if (session) {
+          response["players"] = SerializePlayers(*session);
+        }
+        Send(SerializeResponse(id, true, response));
       } else {
         Send(SerializeResponse(id, false, {{"error", "failed to join"}}));
       }

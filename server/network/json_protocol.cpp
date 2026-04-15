@@ -24,22 +24,37 @@ std::string SerializeResponse(const std::string& request_id, bool success, const
   return j.dump();
 }
 
-std::string SerializeGameEvent(const events::GameEvent& event) {
+std::string SerializeGameEvent(const events::GameEvent& event, const std::string& viewer_player_id) {
   nlohmann::json j;
   j["type"] = "event";
 
   std::visit(
-      [&j](auto&& ev) {
+      [&j, &viewer_player_id](auto&& ev) {
         using T = std::decay_t<decltype(ev)>;
         if constexpr (std::is_same_v<T, events::QuestionStarted>) {
           j["event_type"] = "question_started";
-          j["payload"] = {{"question_index", ev.question_index}, {"duration_ms", ev.duration_ms.count()}};
+          j["payload"] = {{"question_index", ev.question_index},
+                          {"total_questions", ev.total_questions},
+                          {"duration_ms", ev.duration_ms.count()},
+                          {"text", ev.text},
+                          {"answer_type",
+                           ev.answer_type == domain::AnswerType::MultipleChoice ? "multiple_choice" : "single_choice"},
+                          {"options", ev.options}};
         } else if constexpr (std::is_same_v<T, events::TimerUpdate>) {
           j["event_type"] = "timer_update";
           j["payload"] = {{"remaining_ms", ev.remaining_ms.count()}};
         } else if constexpr (std::is_same_v<T, events::QuestionTimeout>) {
           j["event_type"] = "question_timeout";
           j["payload"] = nlohmann::json::object();
+        } else if constexpr (std::is_same_v<T, events::AnswerReveal>) {
+          j["event_type"] = "answer_reveal";
+          const auto selection_it = ev.selections_by_player.find(viewer_player_id);
+          const auto& my_selected_indices =
+              selection_it != ev.selections_by_player.end() ? selection_it->second : std::vector<size_t>{};
+          j["payload"] = {{"correct_indices", ev.correct_indices},
+                          {"my_selected_indices", my_selected_indices},
+                          {"option_pick_counts", ev.option_pick_counts},
+                          {"reveal_duration_ms", ev.reveal_duration_ms.count()}};
         } else if constexpr (std::is_same_v<T, events::Leaderboard>) {
           j["event_type"] = "leaderboard";
           nlohmann::json entries = nlohmann::json::array();
@@ -47,9 +62,15 @@ std::string SerializeGameEvent(const events::GameEvent& event) {
             entries.push_back({{"player_id", entry.player_id}, {"score", entry.score}});
           }
           j["payload"] = {{"entries", entries}};
+          if (ev.next_round_delay_ms.has_value()) {
+            j["payload"]["next_round_delay_ms"] = ev.next_round_delay_ms->count();
+          }
         } else if constexpr (std::is_same_v<T, events::PlayerJoined>) {
           j["event_type"] = "player_joined";
-          j["payload"] = {{"player_id", ev.player_id}, {"role", ev.role == domain::Role::Host ? "host" : "player"}};
+          j["payload"] = {{"player_id", ev.player_id},
+                          {"display_name", ev.display_name},
+                          {"role", ev.role == domain::Role::Host ? "host" : "player"},
+                          {"is_competing", ev.is_competing}};
         } else if constexpr (std::is_same_v<T, events::PlayerLeft>) {
           j["event_type"] = "player_left";
           j["payload"] = {{"player_id", ev.player_id}};

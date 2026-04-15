@@ -13,9 +13,11 @@ std::optional<std::string> GameController::CreateQuiz(domain::Quiz quiz) {
 }
 
 std::optional<interfaces::SessionCreated> GameController::CreateSession(const std::string& quiz_code,
-                                                                        const std::string& host_id,
+                                                                        const std::string& host_display_name,
+                                                                        bool host_is_spectator,
                                                                         int auto_advance_delay_ms) {
-  return handler_.CreateSession(quiz_code, host_id, auto_advance_delay_ms);
+  const auto host_player_id = GeneratePlayerId();
+  return handler_.CreateSession(quiz_code, host_player_id, host_display_name, host_is_spectator, auto_advance_delay_ms);
 }
 
 bool GameController::StartGame(const std::string& session_id) {
@@ -41,15 +43,18 @@ bool GameController::NextQuestion(const std::string& session_id) {
   return ok;
 }
 
-std::optional<std::string> GameController::JoinAsPlayer(const std::string& session_id,
-                                                        const std::string& pin,
-                                                        const std::string& display_name) {
+std::optional<events::GameEvent> GameController::CompleteQuestion(const std::string& session_id) {
+  return session_manager_.CompleteQuestion(session_id);
+}
+
+std::optional<events::GameEvent> GameController::FinishReveal(const std::string& session_id) {
+  return session_manager_.FinishReveal(session_id);
+}
+
+std::optional<interfaces::JoinedSession> GameController::JoinAsPlayer(const std::string& pin,
+                                                                      const std::string& display_name) {
   std::string player_id = GeneratePlayerId();
-  std::string name = display_name.empty() ? player_id : display_name;
-  bool ok = handler_.JoinAsPlayer(session_id, pin, player_id, name);
-  if (ok)
-    return player_id;
-  return std::nullopt;
+  return handler_.JoinAsPlayer(pin, player_id, display_name);
 }
 
 bool GameController::LeaveSession(const std::string& session_id, const std::string& player_id) {
@@ -68,6 +73,10 @@ bool GameController::Disconnect(const std::string& session_id, const std::string
 
 bool GameController::Reconnect(const std::string& session_id, const std::string& player_id) {
   return session_manager_.Reconnect(session_id, player_id);
+}
+
+std::optional<domain::Session> GameController::GetSessionById(const std::string& session_id) const {
+  return session_manager_.GetSessionById(session_id);
 }
 
 std::string GameController::GeneratePlayerId() {

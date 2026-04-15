@@ -34,7 +34,8 @@ bool AddPlayer(Session& s, const Player& p) {
 }
 
 bool CanStartGame(const Session& s) {
-  return s.state == SessionState::Lobby && !s.players.empty();
+  return s.state == SessionState::Lobby &&
+         std::ranges::any_of(s.players, [](const Player& player) { return player.is_competing; });
 }
 
 bool StartGame(Session& s) {
@@ -44,6 +45,7 @@ bool StartGame(Session& s) {
   s.current_question_index = 0;
   for (auto& p : s.players) {
     p.answered_current_question = false;
+    p.current_selected_indices.clear();
   }
   return true;
 }
@@ -52,14 +54,15 @@ bool CanSubmitAnswer(const Session& s, const std::string& player_id) {
   if (s.state != SessionState::Running)
     return false;
   const Player* p = FindPlayer(s, player_id);
-  return p != nullptr && !p->answered_current_question;
+  return p != nullptr && s.has_question_deadline && p->is_competing && !p->answered_current_question;
 }
 
-bool RecordAnswer(Session& s, const std::string& player_id) {
+bool RecordAnswer(Session& s, const std::string& player_id, const std::vector<size_t>& selected_indices) {
   Player* p = FindPlayer(s, player_id);
   if (p == nullptr)
     return false;
   p->answered_current_question = true;
+  p->current_selected_indices = selected_indices;
   return true;
 }
 
@@ -69,6 +72,7 @@ bool AdvanceToNextQuestion(Session& s, size_t total_questions) {
   s.current_question_index++;
   for (auto& p : s.players) {
     p.answered_current_question = false;
+    p.current_selected_indices.clear();
   }
   if (s.current_question_index >= total_questions) {
     s.state = SessionState::Finished;

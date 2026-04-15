@@ -41,7 +41,7 @@ endif ()
 add_subdirectory(lib)
 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    enable_testing()
+    include(CTest)
     add_subdirectory(client)
     add_subdirectory(server)
     add_subdirectory(tests)

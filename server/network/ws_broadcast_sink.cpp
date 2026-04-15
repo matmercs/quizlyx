@@ -9,10 +9,9 @@ WsBroadcastSink::WsBroadcastSink(WsConnectionManager& manager) : manager_(manage
 }
 
 void WsBroadcastSink::Broadcast(const std::string& session_id, const events::GameEvent& event) {
-  std::string message = SerializeGameEvent(event);
   auto connections = manager_.GetSessionConnections(session_id);
   for (auto& conn : connections) {
-    conn->Send(message);
+    conn->Send(SerializeGameEvent(event, conn->playerId()));
   }
 }
 

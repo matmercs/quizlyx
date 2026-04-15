@@ -73,7 +73,7 @@ struct DemoSessionInfo {
 // Commands for the queue
 struct CreateSessionCmd {
   std::string quiz_code;
-  std::string host_id;
+  std::string host_name;
   int game_num;
   std::promise<DemoSessionInfo> result;
 };
@@ -300,7 +300,8 @@ private:
             using T = std::decay_t<decltype(command)>;
 
             if constexpr (std::is_same_v<T, CreateSessionCmd>) {
-              auto result = commands_.CreateSession(command.quiz_code, command.host_id, 0);
+              std::string host_player_id = "HD" + std::to_string(next_demo_player_id_++);
+              auto result = commands_.CreateSession(command.quiz_code, host_player_id, command.host_name, false, 0);
               if (result) {
                 DemoSessionInfo info{result->session_id, result->pin, command.quiz_code};
                 command.result.set_value(info);
@@ -311,7 +312,7 @@ private:
               }
             } else if constexpr (std::is_same_v<T, JoinPlayerCmd>) {
               std::string player_id = "PD" + std::to_string(next_demo_player_id_++);
-              bool joined = commands_.JoinAsPlayer(command.session_id, command.pin, player_id, command.display_name);
+              auto joined = commands_.JoinAsPlayer(command.pin, player_id, command.display_name);
               if (joined) {
                 Logger::Instance().Log("CMD", "Game" + std::to_string(command.game_num) + " JoinPlayer " + player_id);
               }
@@ -353,7 +354,7 @@ private:
     std::promise<DemoSessionInfo> session_promise;
     std::future<DemoSessionInfo> session_future = session_promise.get_future();
     command_queue_.Push(CreateSessionCmd{.quiz_code = quiz_code,
-                                         .host_id = "host_" + std::to_string(game_num),
+                                         .host_name = "host_" + std::to_string(game_num),
                                          .game_num = game_num,
                                          .result = std::move(session_promise)});
 
@@ -429,7 +430,33 @@ private:
 
       auto events = timer_service_.Tick();
       for (const auto& timer_event : events) {
-        broadcast_sink_.Broadcast(timer_event.session_id, timer_event.event);
+        if (timer_event.timer_type == services::TimerType::QuestionDeadline) {
+          if (std::holds_alternative<events::TimerUpdate>(timer_event.event)) {
+            broadcast_sink_.Broadcast(timer_event.session_id, timer_event.event);
+          } else if (std::holds_alternative<events::QuestionTimeout>(timer_event.event)) {
+            broadcast_sink_.Broadcast(timer_event.session_id, timer_event.event);
+            auto round_result = session_manager_.CompleteQuestion(timer_event.session_id);
+            if (!round_result)
+              continue;
+            broadcast_sink_.Broadcast(timer_event.session_id, *round_result);
+            if (const auto* reveal = std::get_if<events::AnswerReveal>(&*round_result); reveal != nullptr) {
+              timer_service_.SetRevealDeadline(timer_event.session_id,
+                                               time_provider_.Now() + reveal->reveal_duration_ms);
+            }
+          }
+        } else if (timer_event.timer_type == services::TimerType::RevealDelay) {
+          auto post_reveal_event = session_manager_.FinishReveal(timer_event.session_id);
+          if (!post_reveal_event)
+            continue;
+          broadcast_sink_.Broadcast(timer_event.session_id, *post_reveal_event);
+          if (const auto* leaderboard = std::get_if<events::Leaderboard>(&*post_reveal_event);
+              leaderboard != nullptr && leaderboard->next_round_delay_ms.has_value()) {
+            timer_service_.SetAutoAdvanceDeadline(timer_event.session_id,
+                                                  time_provider_.Now() + *leaderboard->next_round_delay_ms);
+          }
+        } else if (timer_event.timer_type == services::TimerType::AutoAdvance) {
+          command_queue_.Push(NextQuestionCmd{.session_id = timer_event.session_id, .game_num = -1});
+        }
       }
     }
 

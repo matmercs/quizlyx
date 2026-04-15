@@ -1,0 +1,260 @@
+QWidget {
+    font-size: 14px;
+    color: #EDEDED;
+}
+
+QWidget#quizEditorPage {
+    font-size: 13px;
+}
+
+QWidget#quizEditorPage QLabel#titleLabel {
+    font-size: 24px;
+}
+
+QWidget#quizEditorPage QLabel#subtitleLabel {
+    font-size: 13px;
+}
+
+QWidget#quizEditorPage QLineEdit,
+QWidget#quizEditorPage QSpinBox,
+QWidget#quizEditorPage QComboBox,
+QWidget#quizEditorPage QTextEdit {
+    padding: 5px 10px;
+    min-height: 22px;
+}
+
+QWidget#quizEditorPage QPushButton {
+    padding: 6px 12px;
+}
+
+QWidget#quizEditorPage QListWidget#questionList::item {
+    padding: 7px 9px;
+}
+
+QWidget#quizEditorPage QComboBox#questionTypeCombo {
+    min-width: 220px;
+}
+
+QWidget#quizEditorPage QComboBox#questionTypeCombo QAbstractItemView {
+    min-width: 220px;
+}
+
+QMainWindow, QStackedWidget, QWidget#centralRoot {
+    background-color: #1E1F22;
+}
+
+QLabel#titleLabel {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+QLabel#subtitleLabel {
+    font-size: 14px;
+    color: #A9ADB8;
+}
+
+QLabel#statusLabel {
+    color: #E55353;
+    font-size: 13px;
+}
+
+QLabel#pinLabel {
+    font-size: 72px;
+    font-weight: 800;
+    letter-spacing: 10px;
+    color: #EDEDED;
+}
+
+QLabel#questionText {
+    font-size: 22px;
+    font-weight: 600;
+    padding: 8px 16px;
+}
+
+QLineEdit, QSpinBox, QComboBox, QTextEdit {
+    background-color: #2A2D32;
+    border: 1px solid #3A3E46;
+    border-radius: 8px;
+    padding: 7px 12px;
+    color: #EDEDED;
+    selection-background-color: #7C5CFF;
+    selection-color: white;
+    min-height: 24px;
+}
+
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus, QTextEdit:focus {
+    border: 1px solid #7C5CFF;
+}
+
+QTextEdit {
+    padding: 10px;
+}
+
+QComboBox {
+    padding-right: 38px;
+}
+
+QComboBox::drop-down, QSpinBox::up-button, QSpinBox::down-button {
+    width: 28px;
+    background-color: #24262A;
+    border-left: 1px solid #3A3E46;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+QComboBox::drop-down:hover, QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+    background-color: #34383F;
+}
+
+QComboBox::down-arrow {
+    image: url(:/client/resources/chevron-down.svg);
+    width: 12px;
+    height: 12px;
+}
+
+QSpinBox::up-arrow {
+    image: url(:/client/resources/chevron-up.svg);
+    width: 12px;
+    height: 12px;
+}
+
+QSpinBox::down-arrow {
+    image: url(:/client/resources/chevron-down.svg);
+    width: 12px;
+    height: 12px;
+}
+
+QPushButton {
+    background-color: #2A2D32;
+    border: 1px solid #3A3E46;
+    border-radius: 6px;
+    padding: 8px 18px;
+    color: #EDEDED;
+}
+
+QPushButton:hover {
+    background-color: #34383F;
+    border-color: #7C5CFF;
+}
+
+QPushButton:disabled {
+    color: #6B6F78;
+    background-color: #24262A;
+    border-color: #2F323A;
+}
+
+QPushButton#primaryButton {
+    background-color: #7C5CFF;
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 10px 24px;
+}
+
+QPushButton#primaryButton:hover {
+    background-color: #7C5CFF;
+}
+
+QPushButton#primaryButton:disabled {
+    background-color: #2F343B;
+    color: #808490;
+}
+
+QPushButton#roleButton {
+    font-size: 17px;
+    font-weight: 600;
+    padding: 22px;
+    border: 1px solid #3A3E46;
+    background-color: #24262A;
+    color: #EDEDED;
+    text-align: center;
+    line-height: 1.35;
+}
+
+QPushButton#roleButton:hover {
+    border-color: #7C5CFF;
+    background-color: #2C3038;
+}
+
+QTableWidget, QListWidget {
+    background-color: #1E1F22;
+    border: 1px solid #2F323A;
+    border-radius: 6px;
+    alternate-background-color: #24262A;
+    gridline-color: transparent;
+}
+
+QTableWidget::item, QListWidget::item {
+    padding: 6px;
+    color: #EDEDED;
+}
+
+QListWidget#questionList::item {
+    padding: 10px 12px;
+    border-bottom: 1px solid #2A2D32;
+}
+
+QListWidget#questionList::item:selected {
+    background-color: #2C3038;
+    border-left: 3px solid #7C5CFF;
+}
+
+QListWidget#playerList::item {
+    padding: 14px 16px;
+    border-bottom: 1px solid #31343C;
+}
+
+QHeaderView::section {
+    background-color: #24262A;
+    color: #A9ADB8;
+    border: none;
+    padding: 6px 10px;
+}
+
+QWidget#playerList, QWidget#leaderboard {
+    font-size: 14px;
+}
+
+QCheckBox, QRadioButton {
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1px solid #4A4F58;
+    background-color: #24262A;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #7C5CFF;
+    border-color: #7C5CFF;
+}
+
+QRadioButton::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    border: 1px solid #4A4F58;
+    background-color: #24262A;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #EDEDED;
+    border: 5px solid #7C5CFF;
+}
+
+QRadioButton#quizOptionRadio::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    border: 1px solid #4A4F58;
+    background-color: #24262A;
+}
+
+QRadioButton#quizOptionRadio::indicator:checked {
+    background-color: #7C5CFF;
+    border: 1px solid #7C5CFF;
+}

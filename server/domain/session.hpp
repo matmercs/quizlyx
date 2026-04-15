@@ -18,6 +18,8 @@ struct Player {
   Role role;
   int score;
   bool answered_current_question;
+  bool is_competing = true;
+  std::vector<size_t> current_selected_indices;
   bool connected = true;
   std::optional<std::chrono::steady_clock::time_point> disconnected_at;
 };
@@ -40,7 +42,7 @@ bool AddPlayer(Session& s, const Player& p);
 bool CanStartGame(const Session& s);
 bool StartGame(Session& s);
 bool CanSubmitAnswer(const Session& s, const std::string& player_id);
-bool RecordAnswer(Session& s, const std::string& player_id);
+bool RecordAnswer(Session& s, const std::string& player_id, const std::vector<size_t>& selected_indices);
 bool AdvanceToNextQuestion(Session& s, size_t total_questions);
 void RemovePlayer(Session& s, const std::string& player_id);
 bool DisconnectPlayer(Session& s, const std::string& player_id, std::chrono::steady_clock::time_point now);

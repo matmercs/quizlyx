@@ -12,16 +12,38 @@ else ()
     set(PATH_DELIMITER ":")
 endif ()
 
-# Set necessary environment variables to use Qt
+# Prepare Qt search paths. Prefer an installed Qt before falling back to a local source build.
 set(QT_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/qt-build")
 set(QT_INCLUDE_DIR "${QT_BUILD_DIR}/include")
 set(QT_BIN_DIR "${QT_BUILD_DIR}/bin")
-set(Qt6_DIR "${QT_BUILD_DIR}/lib/cmake/Qt6")
-set(ENV{QTDIR} ${QT_BUILD_DIR})
-set(ENV{PATH} "${QT_BIN_DIR}${PATH_DELIMITER}$ENV{PATH}")
+set(QT_CMAKE_DIR "${QT_BUILD_DIR}/lib/cmake/Qt6")
+
+if (EXISTS "${QT_CMAKE_DIR}/Qt6Config.cmake")
+    list(PREPEND CMAKE_PREFIX_PATH "${QT_BUILD_DIR}")
+    set(ENV{QTDIR} "${QT_BUILD_DIR}")
+    set(ENV{PATH} "${QT_BIN_DIR}${PATH_DELIMITER}$ENV{PATH}")
+endif ()
+
+if (APPLE)
+    set(QT_ADDITIONAL_PACKAGES_PREFIX_PATH "")
+    foreach (qt_prefix
+            "/opt/homebrew/opt/qtbase"
+            "/opt/homebrew/opt/qtwebsockets"
+            "/opt/homebrew/opt/qtdeclarative"
+            "/opt/homebrew/opt/qtsvg"
+            "/usr/local/opt/qtbase"
+            "/usr/local/opt/qtwebsockets"
+            "/usr/local/opt/qtdeclarative"
+            "/usr/local/opt/qtsvg")
+        if (EXISTS "${qt_prefix}")
+            list(PREPEND CMAKE_PREFIX_PATH "${qt_prefix}")
+            list(APPEND QT_ADDITIONAL_PACKAGES_PREFIX_PATH "${qt_prefix}")
+        endif ()
+    endforeach ()
+endif ()
 
 # Fetch the package
-find_package(Qt6 COMPONENTS Core Gui Widgets QUIET)
+find_package(Qt6 COMPONENTS Core Gui Widgets Network WebSockets Test QUIET)
 
 if (NOT Qt6_FOUND)
     # Set Ninja for compilation
@@ -46,6 +68,9 @@ if (NOT Qt6_FOUND)
     # Configure Qt (skip building of useless modules)
     set(QT_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/qt-build")
     file(MAKE_DIRECTORY ${QT_BUILD_DIR})
+    set(Qt6_DIR "${QT_CMAKE_DIR}")
+    set(ENV{QTDIR} "${QT_BUILD_DIR}")
+    set(ENV{PATH} "${QT_BIN_DIR}${PATH_DELIMITER}$ENV{PATH}")
     message(STATUS "Configuring...")
     set(QT_CONFIGURE_OPTIONS -static -c++std c++20 -static-runtime -release -nomake examples -nomake tests -prefix ${QT_BUILD_DIR})
 
@@ -61,7 +86,7 @@ if (NOT Qt6_FOUND)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --parallel
             WORKING_DIRECTORY ${QT_BUILD_DIR})
 
-    find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
+    find_package(Qt6 COMPONENTS Core Gui Widgets Network WebSockets Test REQUIRED)
 else ()
     message(STATUS "Qt 6 found in the system.")
 endif ()
@@ -73,6 +98,8 @@ add_library(qt INTERFACE)
 target_include_directories(qt INTERFACE "${QtCMake_SOURCE_DIR}/lib/qt")
 target_include_directories(qt INTERFACE "${qt_cmake_SOURCE_DIR}/lib/qt")
 target_include_directories(qt INTERFACE "${qtcmake_SOURCE_DIR}/lib/qt")
-target_include_directories(qt INTERFACE "${QT_INCLUDE_DIR}")
+if (EXISTS "${QT_INCLUDE_DIR}")
+    target_include_directories(qt INTERFACE "${QT_INCLUDE_DIR}")
+endif ()
 
-target_link_libraries(qt INTERFACE Qt6::Core Qt6::Gui Qt6::Widgets)
+target_link_libraries(qt INTERFACE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::WebSockets Qt6::Test)

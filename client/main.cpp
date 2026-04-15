@@ -1,39 +1,17 @@
-#include <iostream>
-
-#include <boost/filesystem.hpp>
-
 #include <QApplication>
-#include <QDateTime>
-#include <QLCDNumber>
-#include <QTimer>
 
-namespace {
-static constexpr int KInterval = 1000;
-static constexpr int KDigitCount = 8;
-static constexpr int KWidth = 280;
-static constexpr int KHeight = 100;
-static constexpr const char* KFormat = "hh:mm:ss";
-} // namespace
+#include "app/Application.hpp"
+#include "ui/Theme.hpp"
 
 int main(int argc, char** argv) {
-  // Boost.Filesystem (requires linking)
-  std::cout << "CWD: " << boost::filesystem::current_path().string() << "\n";
+  QApplication qt(argc, argv);
+  QApplication::setApplicationName(QStringLiteral("Quizlyx"));
+  QApplication::setOrganizationName(QStringLiteral("Quizlyx"));
 
-  if (argc > 1) {
-    std::cout << "No CLI arguments allowed.\n";
-    return 0;
-  }
+  quizlyx::client::ui::applyTheme(qt);
 
-  QApplication a(argc, argv);
-
-  QLCDNumber lcd;
-  QTimer t;
-  QObject::connect(&t, &QTimer::timeout, [&lcd]() { lcd.display(QDateTime::currentDateTime().toString(KFormat)); });
-  t.start(KInterval);
-  lcd.setDigitCount(KDigitCount);
-  lcd.display(QDateTime::currentDateTime().toString(KFormat));
-  lcd.resize(KWidth, KHeight);
-  lcd.show();
+  quizlyx::client::app::Application app;
+  app.show();
 
   return QApplication::exec();
 }
